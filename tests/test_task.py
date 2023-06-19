@@ -1,11 +1,3 @@
-# import sys
-# import os 
-
-# file_path = os.path.abspath(__file__)
-# parent_dir = os.path.dirname(file_path)
-# print('parend dir')
-# print(parent_dir)
-
 import unittest
 from src.task import *
 

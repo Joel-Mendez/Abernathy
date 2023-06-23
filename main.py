@@ -1,33 +1,30 @@
 # Description: Main file for the Task Manager Application
 
 from src.task_manager import * 
+from src.ui import *
 
 def main():
     print('Welcome to your Task Manager')
     while True: 
-        # Promting User for input (move to ui.py later)
-        print("What can I help you with?")
-        print("c - create task")
-        print("d - delete task")
-        print("l - list tasks")
-        print("x - exit application") 
-        user_input = input()
+        user_input = prompt_user()
 
         if user_input == "c": # Handle User Input functions in UI later
             # Create Task
-            task_name = input('Specify Task name ...')
+            print('creating task...')
+            task_name = input('Enter task name: ')
             create_task(task_name)
         elif user_input == "d":
             # Delete Task
-            pass
+            print('delete task...')
+            task_name = input('Enter task id: ')  
+            delete_task(task_name)
         elif user_input == "l":
             # List Tasks
-            pass
+            print('list tasks ...')
+            list_tasks()
         elif user_input == "x":
             print("Exiting app... ")
             break
-        else: 
-            print("Invalid Option. Please Try again...")
 
 if __name__ == "__main__":
     main()

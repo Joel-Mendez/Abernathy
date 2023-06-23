@@ -30,8 +30,8 @@ class Database:
         rows = cursor.fetchall()
         return rows
     
-    def delete_task(self,task):
+    def delete_task(self,task_id):
         cursor = self.cursor
-        cursor.execute("DELETE FROM tasks WHERE id=?", (task.id,))
+        cursor.execute("DELETE FROM tasks WHERE id=?", (task_id,))
         
         self.conn.commit()

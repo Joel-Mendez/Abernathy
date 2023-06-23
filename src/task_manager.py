@@ -6,7 +6,12 @@ def create_task(task_name):
     task = Task(None, task_name)
     db.add_task(task)
 
-# def delete_task(task_id):
-#     db = Database('tasks.db')
-#     task = Task(task_id, None)
-#     db.delete_task(task)
+def list_tasks():
+    db = Database('tasks.db')
+    tasks = db.get_tasks()
+    for task in tasks:
+        print(task)
+
+def delete_task(task_id):
+    db = Database('tasks.db')
+    db.delete_task(task_id)

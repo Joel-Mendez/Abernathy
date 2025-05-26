@@ -14,11 +14,15 @@ print("🔁 Abernathy is ready! Type 'exit' to quit.\n")
 while True: 
     print("[User]: ", end = "")
     user_input = input()
+    print("")
     if user_input.lower() == "exit":
         break
     messages += "[User]: " + user_input + " [Assistant]: "
 
-    output = llm(messages, stop=["[User]:"],max_tokens = 500, temperature = .9)
-    chat_output = output["choices"][0]["text"]
-    print("[Abernathy]: "+chat_output)
-    messages += " "+chat_output
+    print("[Abernathy]: ", end="")
+    for output in llm(messages, stop=["[User]:"],max_tokens = 500, temperature = .1, stream = True):
+        chat_output = output["choices"][0]["text"]
+        print(chat_output, end="", flush = True)
+        messages += chat_output
+    messages += " "
+    print("\n")

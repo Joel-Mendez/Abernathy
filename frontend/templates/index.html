@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reverse String</title>
+</head>
+<body>
+    <h1>Reverse String</h1>
+    <input type="text" id="inputString" placeholder="Enter a string">
+    <button onclick="reverseString()">Reverse</button>
+    <h2>Result: <span id="result"></span></h2>
+
+    <script>
+        async function reverseString() {
+            const input = document.getElementById('inputString').value;
+            try {
+                const response = await fetch('/api/reverse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input: input }),
+                });
+                const data = await response.json();
+                document.getElementById('result').innerText = data.reversed;
+            } catch (error) {
+                console.error('Error reversing string:', error);
+                document.getElementById('result').innerText = 'Failed to reverse string';
+            }
+        }
+    </script>
+</body>
+</html>

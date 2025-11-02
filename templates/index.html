@@ -13,5 +13,29 @@
             document.getElementById("hello_message").textContent = data.message;
         });
     </script>
+    
+    <h1>Type something:</h1>
+    <input type="text" id="inputString" placeholder="Enter message ... ">
+    <button onclick="sendMessage()">Send</button>
+
+    <p>Response: <span id="result"></span></p>
+
+    <script>
+        function sendMessage() {
+            const input = document.getElementById("inputString").value;
+
+            fetch("/reverse", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: input })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("result").textContent = data.reversed;
+            });
+        }
+    </script>
 </body>
 </html>

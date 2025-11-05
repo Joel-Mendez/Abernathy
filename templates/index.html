@@ -4,16 +4,6 @@
     <title>Abernathy</title>
 </head>
 <body>
-    <h1>Message from Python backend</h1>
-    <p id="hello_message"></p>
-    <script>
-        fetch("/greeting")
-        .then(response => response.json()) 
-        .then(data => {
-            document.getElementById("hello_message").textContent = data.message;
-        });
-    </script>
-    
     <h1>Type something:</h1>
     <input type="text" id="inputString" placeholder="Enter message ... ">
     <button onclick="sendMessage()">Send</button>

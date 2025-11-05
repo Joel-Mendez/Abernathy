@@ -6,10 +6,6 @@ app = Flask(__name__)
 def index():
     return render_template("index.html")
 
-@app.route("/greeting")     
-def home():
-    return jsonify({"message":"Howdy, howdy!"}) 
-
 @app.route("/reverse",methods=["POST"]) 
 def reverse_text():
     data = request.get_json()

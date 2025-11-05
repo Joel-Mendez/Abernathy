@@ -1,6 +1,18 @@
 from flask import Flask, jsonify, render_template, request
+import sqlite3 
 
 app = Flask(__name__) 
+
+# Initialize the database
+def init_db():
+    conn = sqlite3.connect("abernathy.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            name TEXT NOT NULL
+        )
+    """)
 
 @app.route("/")     
 def index():
@@ -14,4 +26,5 @@ def reverse_text():
     return jsonify({"reversed":reversed_text})
 
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True)  

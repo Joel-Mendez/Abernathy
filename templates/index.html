@@ -4,29 +4,47 @@
     <title>Abernathy</title>
 </head>
 <body>
+    <h1>Add a Task</h1>
+    <form id="taskForm">
+        <input type="text" id="taskInput" placeholder="Enter a task..." required />
+        <button type="submit">Save Task</button>
+    </form>
 
-    <h1>Tasks:</h1>
-    <input type="text" id="inputString" placeholder="New task ... ">
-    <button onclick="sendMessage()">Add</button>
-
-    <p>Response: <span id="result"></span></p>
+    <h2>Saved Tasks</h2>
+    <ul id="taskList"></ul>
 
     <script>
-        function sendMessage() {
-            const input = document.getElementById("inputString").value;
+        fetch("/get_tasks")
+            .then(response => response.json())
+            .then(data => {
+                const taskList = document.getElementById("taskList");
+                data.tasks.forEach(task => {
+                    const li = document.createElement("li");
+                    li.textContent = task;
+                    taskList.appendChild(li);
+                });
+            });
 
-            fetch("/reverse", {
+        document.getElementById("taskForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const task = document.getElementById("taskInput").value;
+
+            fetch("/add_task", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: input })
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("result").textContent = data.reversed;
-            });
-        }
+                body: JSON.stringify({ task: task })
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message);
+                  document.getElementById("taskInput").value = "";
+                  const li = document.createElement("li");
+                  li.textContent = task;
+                  document.getElementById("taskList").appendChild(li);
+                  document.getElementById("taskInput").value = "";
+              });
+        });
     </script>
 </body>
 </html>

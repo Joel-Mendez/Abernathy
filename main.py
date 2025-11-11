@@ -10,7 +10,8 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            name TEXT NOT NULL
+            name TEXT NOT NULL,
+            status TEXT DEFAULT 'not started'
         )
     """)
 
@@ -28,7 +29,7 @@ def add_task():
 
     conn = sqlite3.connect("abernathy.db")
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (name) VALUES (?)", (task_name,))
+    cursor.execute("INSERT INTO tasks (name, status) VALUES (?, ?)", (task_name,"not started"))
     conn.commit()
     conn.close()
 
@@ -38,12 +39,26 @@ def add_task():
 def get_tasks():
     conn = sqlite3.connect("abernathy.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT name FROM tasks")
+    cursor.execute("SELECT name, status FROM tasks")
     rows = cursor.fetchall()
-    conn.close 
+    conn.close()
 
-    task_list = [row[0] for row in rows]
+    task_list = [{"name": row[0], "status": row[1]} for row in rows]
     return jsonify({"tasks":task_list})
+
+@app.route("/update_status", methods=["POST"])
+def update_status():
+    data = request.get_json()
+    task_name = data.get("task")
+    new_status = data.get("status")
+
+    conn = sqlite3.connect("abernathy.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE tasks SET status = ? WHERE name = ?", (new_status, task_name))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Status updated"})
 
 if __name__ == "__main__":
     init_db()

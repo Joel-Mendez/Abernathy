@@ -10,90 +10,115 @@
             line-height: 1.5;
             padding-left: 26px; 
         }
+        h2 {
+            margin-bottom: 0px;
+        }
         ul {
             list-style-type: none;
             padding-left: 0;
+            margin-top: 0px;
+        }
+        #addTaskBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            font-size: 32px;        
+            border: none;
+            border-radius: 50%;
+            background-color: #000000;
+            color: white;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h1>Add a Task</h1>
-    <form id="taskForm">
+    <!-- <h1>Add a Task</h1> -->
+    <!-- <form id="taskForm">
         <input type="text" id="taskInput" placeholder="Enter a task..." required />
         <button type="submit">Save Task</button>
-    </form>
+    </form> -->
 
-    <h2>To-Do List</h2>
+    <h2>To-Do</h2>
+    <!-- <h2>
+        <button id="todoTab">To-Do</button>
+        <button id="completedTab">Completed</button>
+    </h2> -->
     <ul id="taskList"></ul>
-
+    <button id="addTaskBtn">+</button>
     <script>
         fetch("/get_tasks")
             .then(response => response.json())
             .then(data => {
                 const taskList = document.getElementById("taskList");
-                data.tasks.forEach(task => {
+                data.tasks
+                    .filter(task => task.status !== "complete")
+                    .forEach(task => {
+                        const li = document.createElement("li");
+                        const checkbox = document.createElement("input");
+                        checkbox.type = "checkbox";
+                        checkbox.checked = task.status === "complete";
+    
+                        checkbox.addEventListener("change", () => {
+                            fetch("/update_status", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    task: task.name,
+                                    status: checkbox.checked ? "complete" : "not started"
+                                })
+                            });
+                        });
+    
+                        li.appendChild(checkbox);
+                        li.appendChild(document.createTextNode(` ${task.name}`));
+                        taskList.appendChild(li);
+                    });
+            });
+    
+        document.getElementById("addTaskBtn").addEventListener("click", function () {
+            const task = prompt("What task would you like to add?");
+            if (task && task.trim() !== "") {
+                fetch("/add_task", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ task: task.trim() })
+                })
+                .then(response => response.json())
+                .then(data => {
                     const li = document.createElement("li");
                     const checkbox = document.createElement("input");
                     checkbox.type = "checkbox";
-                    checkbox.checked = task.status === "complete";
-
-                    // Update backend when checkbox is clicked
-                    checkbox.addEventListener("change", () => {
+                    checkbox.checked = false;
+    
+                    const label = document.createElement("span");
+                    label.textContent = ` ${task.trim()}`;
+    
+                    checkbox.addEventListener("change", function () {
                         fetch("/update_status", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json"
                             },
-                            body: JSON.stringify({ task: task.name, status: checkbox.checked ? "complete" : "not started" })
+                            body: JSON.stringify({
+                                task: task.trim(),
+                                status: checkbox.checked ? "complete" : "not started"
+                            })
                         });
                     });
-
+    
                     li.appendChild(checkbox);
-                    li.appendChild(document.createTextNode(` ${task.name}`));
-                    taskList.appendChild(li);
+                    li.appendChild(label);
+                    document.getElementById("taskList").appendChild(li);
                 });
-            });
-
-        document.getElementById("taskForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-            const task = document.getElementById("taskInput").value;
-
-            fetch("/add_task", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ task: task })
-            }).then(response => response.json())
-              .then(data => {
-                  document.getElementById("taskInput").value = "";
-                const li = document.createElement("li");
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.checked = false;
-
-                const label = document.createElement("span");
-                label.textContent = ` ${task}`;
-
-                checkbox.addEventListener("change", function () {
-                    fetch("/update_status", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            task: task,
-                            status: checkbox.checked ? "complete" : "not started"
-                        })
-                    });
-                });
-
-                li.appendChild(checkbox);
-                li.appendChild(label);
-                document.getElementById("taskList").appendChild(li);
-                document.getElementById("taskInput").value = "";
-              });
+            }
         });
     </script>
+    
 </body>
 </html>

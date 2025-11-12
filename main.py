@@ -60,6 +60,31 @@ def update_status():
 
     return jsonify({"message": "Status updated"})
 
+@app.route("/edit_task", methods=["POST"])
+def edit_task():
+    data = request.get_json()
+    old_name = data["old"]
+    new_name = data["new"]
+    
+    conn = sqlite3.connect("abernathy.db")
+    conn.execute("UPDATE tasks SET name = ? WHERE name = ?", (new_name, old_name))
+    conn.commit()
+    conn.close()
+    
+    return jsonify(success=True)
+
+@app.route("/delete_task", methods=["POST"])
+def delete_task():
+    data = request.get_json()
+    task = data["task"]
+    
+    conn = sqlite3.connect("abernathy.db")
+    conn.execute("DELETE FROM tasks WHERE name = ?", (task,))
+    conn.commit()
+    conn.close()
+    
+    return jsonify(success=True)
+
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)  

@@ -8,6 +8,7 @@
             font-family: 'Inconsolata', monospace;
             font-size: 16px;
             line-height: 1.5;
+            padding-left: 26px; 
         }
         ul {
             list-style-type: none;
@@ -32,7 +33,6 @@
                 const taskList = document.getElementById("taskList");
                 data.tasks.forEach(task => {
                     const li = document.createElement("li");
-                    // li.textContent = `${task.name} — ${task.status}`;
                     const checkbox = document.createElement("input");
                     checkbox.type = "checkbox";
                     checkbox.checked = task.status === "complete";
@@ -66,18 +66,14 @@
                 body: JSON.stringify({ task: task })
             }).then(response => response.json())
               .then(data => {
-                  alert(data.message);
                   document.getElementById("taskInput").value = "";
-                //   const li = document.createElement("li");
-                //   li.textContent = `${task} — not started`;
-                //   document.getElementById("taskList").appendChild(li);
                 const li = document.createElement("li");
                 const checkbox = document.createElement("input");
                 checkbox.type = "checkbox";
                 checkbox.checked = false;
 
                 const label = document.createElement("span");
-                label.textContent = `${task}`;
+                label.textContent = ` ${task}`;
 
                 checkbox.addEventListener("change", function () {
                     fetch("/update_status", {
@@ -95,7 +91,7 @@
                 li.appendChild(checkbox);
                 li.appendChild(label);
                 document.getElementById("taskList").appendChild(li);
-                  document.getElementById("taskInput").value = "";
+                document.getElementById("taskInput").value = "";
               });
         });
     </script>

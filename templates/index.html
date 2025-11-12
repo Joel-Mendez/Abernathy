@@ -46,6 +46,27 @@
             visibility: visible;
             opacity: 1;
         }
+
+        #viewToggle {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        #viewToggle button {
+            font-family: 'Inconsolata', monospace;
+            font-size: 14px;
+            margin-right: 10px;
+            padding: 6px 12px;
+            cursor: pointer;
+            border: 1px solid #000;
+            background: white;
+            color: #000;
+        }
+
+        #viewToggle button.active {
+            background: #000;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -55,90 +76,110 @@
         <button type="submit">Save Task</button>
     </form> -->
 
-    <h2>To-Do</h2>
-    <!-- <h2>
-        <button id="todoTab">To-Do</button>
-        <button id="completedTab">Completed</button>
-    </h2> -->
+    <h2>Tasks</h2>
+    <div id="viewToggle">
+        <button id="todoBtn">To-Do</button>
+        <button id="completedBtn">Completed</button>
+    </div>
     <ul id="taskList"></ul>
+    <ul id="completedList" style="display: none;"></ul>
     <button id="addTaskBtn">+</button>
     <script>
         fetch("/get_tasks")
             .then(response => response.json())
             .then(data => {
                 const taskList = document.getElementById("taskList");
-                data.tasks
-                    .filter(task => task.status !== "complete")
-                    .forEach(task => {
-                        const li = document.createElement("li");
-                        li.classList.add("task-item");
-                        li.style.display = "flex";
-                        li.style.alignItems = "center";
-                        li.style.marginBottom = "8px";
+                const completedList = document.getElementById("completedList");
 
-                        const checkbox = document.createElement("input");
-                        checkbox.type = "checkbox";
-                        checkbox.checked = task.status === "complete";
-                        checkbox.addEventListener("change", () => {
-                            fetch("/update_status", {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({
-                                    task: task.name,
-                                    status: checkbox.checked ? "complete" : "not started"
-                                })
-                            }).then(() => location.reload());
-                        });
+                data.tasks.forEach(task => {
+                    const li = document.createElement("li");
+                    li.className = "task-item";
+                    li.style.display = "flex";
+                    li.style.alignItems = "center";
+                    li.style.marginBottom = "8px";
 
-                        const label = document.createElement("span");
-                        label.textContent = ` ${task.name}`;
-                        label.style.marginLeft = "8px";
-
-                        const editIcon = document.createElement("i");
-                        editIcon.className = "fas fa-pencil-alt";
-                        editIcon.style.cursor = "pointer";
-                        editIcon.style.marginLeft = "12px";
-                        // editIcon.style.color = "#aaa";       // or use "currentColor" if you prefer
-                        // editIcon.style.fontSize = "12px";
-                        editIcon.title = "Edit";
-                        editIcon.addEventListener("click", () => {
-                            const newName = prompt("Edit task name:", task.name);
-                            if (newName && newName.trim() !== "") {
-                                fetch("/edit_task", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ old: task.name, new: newName.trim() })
-                                }).then(() => location.reload());
-                            }
-                        });
-
-                        const trashIcon = document.createElement("i");
-                        trashIcon.className = "fas fa-trash";
-                        trashIcon.style.cursor = "pointer";
-                        trashIcon.style.marginLeft = "12px";
-                        // trashIcon.style.color = "#aaa";
-                        // trashIcon.style.fontSize = "12px";
-                        trashIcon.title = "Delete";
-                        trashIcon.addEventListener("click", () => {
-                            if (confirm(`Delete "${task.name}"?`)) {
-                                fetch("/delete_task", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ task: task.name })
-                                }).then(() => location.reload());
-                            }
-                        });
-
-                        li.appendChild(checkbox);
-                        li.appendChild(label);
-                        li.appendChild(editIcon);
-                        li.appendChild(trashIcon);
-                        document.getElementById("taskList").appendChild(li);
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.checked = task.status === "complete";
+                    checkbox.addEventListener("change", () => {
+                        fetch("/update_status", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                task: task.name,
+                                status: checkbox.checked ? "complete" : "not started"
+                            })
+                        }).then(() => location.reload());
                     });
+
+                    const label = document.createElement("span");
+                    label.textContent = ` ${task.name}`;
+                    label.style.marginLeft = "8px";
+
+                    const editIcon = document.createElement("i");
+                    editIcon.className = "fas fa-pencil-alt";
+                    editIcon.style.cursor = "pointer";
+                    editIcon.style.marginLeft = "12px";
+                    editIcon.style.color = "#aaa";
+                    editIcon.style.fontSize = "12px";
+                    editIcon.title = "Edit";
+                    editIcon.addEventListener("click", () => {
+                        const newName = prompt("Edit task name:", task.name);
+                        if (newName && newName.trim() !== "") {
+                            fetch("/edit_task", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ old: task.name, new: newName.trim() })
+                            }).then(() => location.reload());
+                        }
+                    });
+
+                    const trashIcon = document.createElement("i");
+                    trashIcon.className = "fas fa-trash";
+                    trashIcon.style.cursor = "pointer";
+                    trashIcon.style.marginLeft = "12px";
+                    trashIcon.style.color = "#aaa";
+                    trashIcon.style.fontSize = "12px";
+                    trashIcon.title = "Delete";
+                    trashIcon.addEventListener("click", () => {
+                        if (confirm(`Delete "${task.name}"?`)) {
+                            fetch("/delete_task", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ task: task.name })
+                            }).then(() => location.reload());
+                        }
+                    });
+
+                    li.appendChild(checkbox);
+                    li.appendChild(label);
+                    li.appendChild(editIcon);
+                    li.appendChild(trashIcon);
+
+                    if (task.status === "complete") {
+                        completedList.appendChild(li);
+                    } else {
+                        taskList.appendChild(li);
+                    }
+                });
             });
-    
+        
+        document.getElementById("todoBtn").addEventListener("click", () => {
+            document.getElementById("taskList").style.display = "block";
+            document.getElementById("completedList").style.display = "none";
+            document.getElementById("todoBtn").classList.add("active");
+            document.getElementById("completedBtn").classList.remove("active");
+        });
+
+        document.getElementById("completedBtn").addEventListener("click", () => {
+            document.getElementById("taskList").style.display = "none";
+            document.getElementById("completedList").style.display = "block";
+            document.getElementById("completedBtn").classList.add("active");
+            document.getElementById("todoBtn").classList.remove("active");
+        });
+
         document.getElementById("addTaskBtn").addEventListener("click", function () {
             const task = prompt("What task would you like to add?");
             if (task && task.trim() !== "") {
@@ -152,6 +193,7 @@
                 .then(response => response.json())
                 .then(data => {
                     const li = document.createElement("li");
+                    li.className = "task-item";
                     const checkbox = document.createElement("input");
                     checkbox.type = "checkbox";
                     checkbox.checked = false;

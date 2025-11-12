@@ -3,6 +3,7 @@
 <head>
     <title>Abernathy</title>
     <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body {
             font-family: 'Inconsolata', monospace;
@@ -31,6 +32,20 @@
             color: white;
             cursor: pointer;
         }
+
+        .task-item i {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            color: #bbb;
+            font-size: 14px;
+            margin-left: 8px;
+        }
+
+        .task-item:hover i {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -56,10 +71,14 @@
                     .filter(task => task.status !== "complete")
                     .forEach(task => {
                         const li = document.createElement("li");
+                        li.classList.add("task-item");
+                        li.style.display = "flex";
+                        li.style.alignItems = "center";
+                        li.style.marginBottom = "8px";
+
                         const checkbox = document.createElement("input");
                         checkbox.type = "checkbox";
                         checkbox.checked = task.status === "complete";
-    
                         checkbox.addEventListener("change", () => {
                             fetch("/update_status", {
                                 method: "POST",
@@ -70,12 +89,53 @@
                                     task: task.name,
                                     status: checkbox.checked ? "complete" : "not started"
                                 })
-                            });
+                            }).then(() => location.reload());
                         });
-    
+
+                        const label = document.createElement("span");
+                        label.textContent = ` ${task.name}`;
+                        label.style.marginLeft = "8px";
+
+                        const editIcon = document.createElement("i");
+                        editIcon.className = "fas fa-pencil-alt";
+                        editIcon.style.cursor = "pointer";
+                        editIcon.style.marginLeft = "12px";
+                        // editIcon.style.color = "#aaa";       // or use "currentColor" if you prefer
+                        // editIcon.style.fontSize = "12px";
+                        editIcon.title = "Edit";
+                        editIcon.addEventListener("click", () => {
+                            const newName = prompt("Edit task name:", task.name);
+                            if (newName && newName.trim() !== "") {
+                                fetch("/edit_task", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ old: task.name, new: newName.trim() })
+                                }).then(() => location.reload());
+                            }
+                        });
+
+                        const trashIcon = document.createElement("i");
+                        trashIcon.className = "fas fa-trash";
+                        trashIcon.style.cursor = "pointer";
+                        trashIcon.style.marginLeft = "12px";
+                        // trashIcon.style.color = "#aaa";
+                        // trashIcon.style.fontSize = "12px";
+                        trashIcon.title = "Delete";
+                        trashIcon.addEventListener("click", () => {
+                            if (confirm(`Delete "${task.name}"?`)) {
+                                fetch("/delete_task", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ task: task.name })
+                                }).then(() => location.reload());
+                            }
+                        });
+
                         li.appendChild(checkbox);
-                        li.appendChild(document.createTextNode(` ${task.name}`));
-                        taskList.appendChild(li);
+                        li.appendChild(label);
+                        li.appendChild(editIcon);
+                        li.appendChild(trashIcon);
+                        document.getElementById("taskList").appendChild(li);
                     });
             });
     

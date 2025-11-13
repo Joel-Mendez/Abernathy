@@ -166,7 +166,17 @@
                 });
             });
         
+        window.onload = () => {
+            const savedTab = localStorage.getItem("activeTab");
+            if (savedTab === "completed") {
+                document.getElementById("completedBtn").click();
+            } else {
+                document.getElementById("todoBtn").click(); // fallback default
+            }
+        };
+
         document.getElementById("todoBtn").addEventListener("click", () => {
+            localStorage.setItem("activeTab", "todo");
             document.getElementById("taskList").style.display = "block";
             document.getElementById("completedList").style.display = "none";
             document.getElementById("todoBtn").classList.add("active");
@@ -174,6 +184,7 @@
         });
 
         document.getElementById("completedBtn").addEventListener("click", () => {
+            localStorage.setItem("activeTab", "completed");
             document.getElementById("taskList").style.display = "none";
             document.getElementById("completedList").style.display = "block";
             document.getElementById("completedBtn").classList.add("active");
@@ -194,13 +205,13 @@
                 .then(data => {
                     const li = document.createElement("li");
                     li.className = "task-item";
+                    li.style.display = "flex";
+                    li.style.alignItems = "center";
+                    li.style.marginBottom = "8px";
+
                     const checkbox = document.createElement("input");
                     checkbox.type = "checkbox";
                     checkbox.checked = false;
-    
-                    const label = document.createElement("span");
-                    label.textContent = ` ${task.trim()}`;
-    
                     checkbox.addEventListener("change", function () {
                         fetch("/update_status", {
                             method: "POST",
@@ -211,11 +222,52 @@
                                 task: task.trim(),
                                 status: checkbox.checked ? "complete" : "not started"
                             })
-                        });
+                        }).then(() => location.reload());
                     });
-    
+
+                    const label = document.createElement("span");
+                    label.textContent = ` ${task.trim()}`;
+                    label.style.marginLeft = "8px";
+
+                    const editIcon = document.createElement("i");
+                    editIcon.className = "fas fa-pencil-alt";
+                    editIcon.style.cursor = "pointer";
+                    editIcon.style.marginLeft = "12px";
+                    editIcon.style.color = "#aaa";
+                    editIcon.style.fontSize = "12px";
+                    editIcon.title = "Edit";
+                    editIcon.addEventListener("click", () => {
+                        const newName = prompt("Edit task name:", task.trim());
+                        if (newName && newName.trim() !== "") {
+                            fetch("/edit_task", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ old: task.trim(), new: newName.trim() })
+                            }).then(() => location.reload());
+                        }
+                    });
+
+                    const trashIcon = document.createElement("i");
+                    trashIcon.className = "fas fa-trash";
+                    trashIcon.style.cursor = "pointer";
+                    trashIcon.style.marginLeft = "12px";
+                    trashIcon.style.color = "#aaa";
+                    trashIcon.style.fontSize = "12px";
+                    trashIcon.title = "Delete";
+                    trashIcon.addEventListener("click", () => {
+                        if (confirm(`Delete "${task.trim()}"?`)) {
+                            fetch("/delete_task", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ task: task.trim() })
+                            }).then(() => location.reload());
+                        }
+                    });
+
                     li.appendChild(checkbox);
                     li.appendChild(label);
+                    li.appendChild(editIcon);
+                    li.appendChild(trashIcon);
                     document.getElementById("taskList").appendChild(li);
                 });
             }

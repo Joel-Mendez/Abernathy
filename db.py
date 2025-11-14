@@ -9,7 +9,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
             name TEXT NOT NULL,
-            status TEXT DEFAULT 'not started'
+            status TEXT DEFAULT 'not started',
+            date_completed TEXT
         )
     """)
     conn.commit()

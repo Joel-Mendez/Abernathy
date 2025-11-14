@@ -11,7 +11,7 @@ def add_task():
 
     conn = db.get_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (name, status) VALUES (?, ?)", (task_name,"not started"))
+    cursor.execute("INSERT INTO tasks (name) VALUES (?)", (task_name))
     conn.commit()
     conn.close()
 

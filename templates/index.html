@@ -4,78 +4,9 @@
     <title>Abernathy</title>
     <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Inconsolata', monospace;
-            font-size: 16px;
-            line-height: 1.5;
-            padding-left: 26px; 
-        }
-        h2 {
-            margin-bottom: 0px;
-        }
-        ul {
-            list-style-type: none;
-            padding-left: 0;
-            margin-top: 0px;
-        }
-        #addTaskBtn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            font-size: 32px;        
-            border: none;
-            border-radius: 50%;
-            background-color: #000000;
-            color: white;
-            cursor: pointer;
-        }
-
-        .task-item i {
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            color: #bbb;
-            font-size: 14px;
-            margin-left: 8px;
-        }
-
-        .task-item:hover i {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        #viewToggle {
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        #viewToggle button {
-            font-family: 'Inconsolata', monospace;
-            font-size: 14px;
-            margin-right: 10px;
-            padding: 6px 12px;
-            cursor: pointer;
-            border: 1px solid #000;
-            background: white;
-            color: #000;
-        }
-
-        #viewToggle button.active {
-            background: #000;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- <h1>Add a Task</h1> -->
-    <!-- <form id="taskForm">
-        <input type="text" id="taskInput" placeholder="Enter a task..." required />
-        <button type="submit">Save Task</button>
-    </form> -->
-
     <h2>Tasks</h2>
     <div id="viewToggle">
         <button id="todoBtn">To-Do</button>

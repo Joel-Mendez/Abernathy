@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, render_template, request
 import sqlite3 
+from datetime import datetime
 
 app = Flask(__name__) 
 
@@ -39,12 +40,15 @@ def add_task():
 def get_tasks():
     conn = sqlite3.connect("abernathy.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT name, status FROM tasks")
+    cursor.execute("SELECT name, status, date_completed FROM tasks")
     rows = cursor.fetchall()
     conn.close()
 
-    task_list = [{"name": row[0], "status": row[1]} for row in rows]
-    return jsonify({"tasks":task_list})
+    task_list = [
+        {"name": row[0], "status": row[1], "date_completed": row[2]}
+        for row in rows
+    ]
+    return jsonify({"tasks": task_list})
 
 @app.route("/update_status", methods=["POST"])
 def update_status():
@@ -54,7 +58,13 @@ def update_status():
 
     conn = sqlite3.connect("abernathy.db")
     cursor = conn.cursor()
-    cursor.execute("UPDATE tasks SET status = ? WHERE name = ?", (new_status, task_name))
+
+    if new_status == "complete":
+        timestamp = datetime.now().isoformat()
+        cursor.execute("UPDATE tasks SET status = ?, date_completed = ? WHERE name = ?", (new_status, timestamp, task_name))
+    else:
+        cursor.execute("UPDATE tasks SET status = ?, date_completed = NULL WHERE name = ?", (new_status, task_name))
+
     conn.commit()
     conn.close()
 

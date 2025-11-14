@@ -91,7 +91,14 @@
                 const taskList = document.getElementById("taskList");
                 const completedList = document.getElementById("completedList");
 
-                data.tasks.forEach(task => {
+                // Sort completed tasks by most recent
+                const sortedCompleted = data.tasks
+                    .filter(task => task.status === "complete")
+                    .sort((a, b) => new Date(b.date_completed || 0) - new Date(a.date_completed || 0));
+
+                const todoTasks = data.tasks.filter(task => task.status !== "complete");
+
+                const renderTask = (task, container) => {
                     const li = document.createElement("li");
                     li.className = "task-item";
                     li.style.display = "flex";
@@ -157,13 +164,14 @@
                     li.appendChild(label);
                     li.appendChild(editIcon);
                     li.appendChild(trashIcon);
+                    container.appendChild(li);
+                };
 
-                    if (task.status === "complete") {
-                        completedList.appendChild(li);
-                    } else {
-                        taskList.appendChild(li);
-                    }
-                });
+                // Render to-do tasks
+                todoTasks.forEach(task => renderTask(task, taskList));
+
+                // Render completed tasks (sorted)
+                sortedCompleted.forEach(task => renderTask(task, completedList));
             });
         
         window.onload = () => {
@@ -181,6 +189,7 @@
             document.getElementById("completedList").style.display = "none";
             document.getElementById("todoBtn").classList.add("active");
             document.getElementById("completedBtn").classList.remove("active");
+            document.getElementById("addTaskBtn").style.display = "block";
         });
 
         document.getElementById("completedBtn").addEventListener("click", () => {
@@ -189,6 +198,7 @@
             document.getElementById("completedList").style.display = "block";
             document.getElementById("completedBtn").classList.add("active");
             document.getElementById("todoBtn").classList.remove("active");
+            document.getElementById("addTaskBtn").style.display = "none";
         });
 
         document.getElementById("addTaskBtn").addEventListener("click", function () {

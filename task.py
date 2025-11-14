@@ -11,26 +11,24 @@ def add_task():
 
     conn = db.get_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (name) VALUES (?)", (task_name))
+    cursor.execute("INSERT INTO tasks (name) VALUES (?)", (task_name,))
     conn.commit()
     conn.close()
 
     return jsonify({"message": f"Task '{task_name}' saved successfully."})
 
-def get_tasks():
+def get_tasks(): ## To review
     conn = db.get_connection()
+
     cursor = conn.cursor()
-    cursor.execute("SELECT name, status, date_completed FROM tasks")
+    cursor.execute("SELECT * FROM tasks")
     rows = cursor.fetchall()
     conn.close()
 
-    task_list = [
-        {"name": row[0], "status": row[1], "date_completed": row[2]}
-        for row in rows
-    ]
+    task_list = [dict(row) for row in rows]
     return jsonify({"tasks": task_list})
 
-def update_status():
+def update_status(): ## to review
     data = request.get_json()
     task_name = data.get("task")
     new_status = data.get("status")
@@ -63,10 +61,10 @@ def edit_task():
 
 def delete_task():
     data = request.get_json()
-    task = data["task"]
+    task_name = data["task"]
     
     conn = db.get_connection()
-    conn.execute("DELETE FROM tasks WHERE name = ?", (task,))
+    conn.execute("DELETE FROM tasks WHERE name = ?", (task_name,))
     conn.commit()
     conn.close()
     

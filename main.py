@@ -1,20 +1,10 @@
 from flask import Flask, jsonify, render_template, request
 import sqlite3 
 from datetime import datetime
+import db
 
+# Initialize app
 app = Flask(__name__) 
-
-# Initialize the database
-def init_db():
-    conn = sqlite3.connect("abernathy.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            name TEXT NOT NULL,
-            status TEXT DEFAULT 'not started'
-        )
-    """)
 
 @app.route("/")     
 def index():
@@ -28,7 +18,7 @@ def add_task():
     if not task_name:
         return jsonify({"message": "No task provided"}), 400
 
-    conn = sqlite3.connect("abernathy.db")
+    conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute("INSERT INTO tasks (name, status) VALUES (?, ?)", (task_name,"not started"))
     conn.commit()
@@ -38,7 +28,7 @@ def add_task():
 
 @app.route("/get_tasks", methods=["GET"])
 def get_tasks():
-    conn = sqlite3.connect("abernathy.db")
+    conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT name, status, date_completed FROM tasks")
     rows = cursor.fetchall()
@@ -56,7 +46,7 @@ def update_status():
     task_name = data.get("task")
     new_status = data.get("status")
 
-    conn = sqlite3.connect("abernathy.db")
+    conn = db.get_connection()
     cursor = conn.cursor()
 
     if new_status == "complete":
@@ -76,7 +66,7 @@ def edit_task():
     old_name = data["old"]
     new_name = data["new"]
     
-    conn = sqlite3.connect("abernathy.db")
+    conn = db.get_connection()
     conn.execute("UPDATE tasks SET name = ? WHERE name = ?", (new_name, old_name))
     conn.commit()
     conn.close()
@@ -88,7 +78,7 @@ def delete_task():
     data = request.get_json()
     task = data["task"]
     
-    conn = sqlite3.connect("abernathy.db")
+    conn = db.get_connection()
     conn.execute("DELETE FROM tasks WHERE name = ?", (task,))
     conn.commit()
     conn.close()
@@ -96,5 +86,5 @@ def delete_task():
     return jsonify(success=True)
 
 if __name__ == "__main__":
-    init_db()
+    db.init_db()
     app.run(debug=True)  

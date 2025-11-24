@@ -1,29 +1,20 @@
+/* Global Styles */
 body {
     font-family: 'Inconsolata', monospace;
     font-size: 16px;
     line-height: 1.5;
     padding-left: 26px; 
 }
+
 h2 {
     margin-bottom: 0px;
 }
+
+/* Task List */
 ul {
     list-style-type: none;
     padding-left: 0;
     margin-top: 0px;
-}
-#addTaskBtn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    font-size: 32px;        
-    border: none;
-    border-radius: 50%;
-    background-color: #000000;
-    color: white;
-    cursor: pointer;
 }
 
 .task-item i {
@@ -40,13 +31,14 @@ ul {
     opacity: 1;
 }
 
+/* Task View Toggle */
 #viewToggle {
     margin-top: 10px;
     margin-bottom: 10px;
 }
 
 #viewToggle button {
-    font-family: 'Inconsolata', monospace;
+    font-family: inherit;
     font-size: 14px;
     margin-right: 10px;
     padding: 6px 12px;
@@ -59,4 +51,20 @@ ul {
 #viewToggle button.active {
     background: #000;
     color: white;
+}
+
+/* Task Button */
+#addTaskBtn {
+    font-family: inherit;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    font-size: 32px;        
+    border: none;
+    border-radius: 50%;
+    background-color: #000000;
+    color: white;
+    cursor: pointer;
 }

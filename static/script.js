@@ -41,9 +41,6 @@ fetch("/get_tasks")
             const editIcon = document.createElement("i");
             editIcon.className = "fas fa-pencil-alt";
             editIcon.style.cursor = "pointer";
-            editIcon.style.marginLeft = "12px";
-            editIcon.style.color = "#aaa";
-            editIcon.style.fontSize = "12px";
             editIcon.title = "Edit";
             editIcon.addEventListener("click", () => {
                 const newName = prompt("Edit task name:", task.name);
@@ -59,9 +56,6 @@ fetch("/get_tasks")
             const trashIcon = document.createElement("i");
             trashIcon.className = "fas fa-trash";
             trashIcon.style.cursor = "pointer";
-            trashIcon.style.marginLeft = "12px";
-            trashIcon.style.color = "#aaa";
-            trashIcon.style.fontSize = "12px";
             trashIcon.title = "Delete";
             trashIcon.addEventListener("click", () => {
                 if (confirm(`Delete "${task.name}"?`)) {
@@ -155,9 +149,6 @@ fetch("/get_tasks")
             const editIcon = document.createElement("i");
             editIcon.className = "fas fa-pencil-alt";
             editIcon.style.cursor = "pointer";
-            editIcon.style.marginLeft = "12px";
-            editIcon.style.color = "#aaa";
-            editIcon.style.fontSize = "12px";
             editIcon.title = "Edit";
             editIcon.addEventListener("click", () => {
                 const newName = prompt("Edit task name:", task.trim());
@@ -173,9 +164,6 @@ fetch("/get_tasks")
             const trashIcon = document.createElement("i");
             trashIcon.className = "fas fa-trash";
             trashIcon.style.cursor = "pointer";
-            trashIcon.style.marginLeft = "12px";
-            trashIcon.style.color = "#aaa";
-            trashIcon.style.fontSize = "12px";
             trashIcon.title = "Delete";
             trashIcon.addEventListener("click", () => {
                 if (confirm(`Delete "${task.trim()}"?`)) {

@@ -1,3 +1,40 @@
+function createEditIcon(task) {
+    const editIcon = document.createElement("i");
+    editIcon.className = "fas fa-pencil-alt";
+    editIcon.title = "Edit";
+
+    editIcon.addEventListener("click", () => {
+        const newName = prompt("Edit task name:", task.name);
+        if (newName && newName.trim() !== "") {
+            fetch("/edit_task", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ old: task.name, new: newName.trim() })
+            }).then(() => location.reload());
+        }
+    });
+
+    return editIcon;
+}
+
+function createTrashIcon(task) {
+    const trashIcon = document.createElement("i");
+    trashIcon.className = "fas fa-trash";
+    trashIcon.title = "Delete";
+
+    trashIcon.addEventListener("click", () => {
+        if (confirm(`Delete "${task.name}"?`)) {
+            fetch("/delete_task", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ task: task.name })
+            }).then(() => location.reload());
+        }
+    });
+
+    return trashIcon;
+}
+
 fetch("/get_tasks")
     .then(response => response.json())
     .then(data => {
@@ -38,34 +75,8 @@ fetch("/get_tasks")
             label.textContent = ` ${task.name}`;
             label.style.marginLeft = "8px";
 
-            const editIcon = document.createElement("i");
-            editIcon.className = "fas fa-pencil-alt";
-            editIcon.style.cursor = "pointer";
-            editIcon.title = "Edit";
-            editIcon.addEventListener("click", () => {
-                const newName = prompt("Edit task name:", task.name);
-                if (newName && newName.trim() !== "") {
-                    fetch("/edit_task", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ old: task.name, new: newName.trim() })
-                    }).then(() => location.reload());
-                }
-            });
-
-            const trashIcon = document.createElement("i");
-            trashIcon.className = "fas fa-trash";
-            trashIcon.style.cursor = "pointer";
-            trashIcon.title = "Delete";
-            trashIcon.addEventListener("click", () => {
-                if (confirm(`Delete "${task.name}"?`)) {
-                    fetch("/delete_task", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ task: task.name })
-                    }).then(() => location.reload());
-                }
-            });
+            const editIcon = createEditIcon(task)
+            const trashIcon = createTrashIcon(task)
 
             li.appendChild(checkbox);
             li.appendChild(label);
@@ -146,34 +157,8 @@ fetch("/get_tasks")
             label.textContent = ` ${task.trim()}`;
             label.style.marginLeft = "8px";
 
-            const editIcon = document.createElement("i");
-            editIcon.className = "fas fa-pencil-alt";
-            editIcon.style.cursor = "pointer";
-            editIcon.title = "Edit";
-            editIcon.addEventListener("click", () => {
-                const newName = prompt("Edit task name:", task.trim());
-                if (newName && newName.trim() !== "") {
-                    fetch("/edit_task", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ old: task.trim(), new: newName.trim() })
-                    }).then(() => location.reload());
-                }
-            });
-
-            const trashIcon = document.createElement("i");
-            trashIcon.className = "fas fa-trash";
-            trashIcon.style.cursor = "pointer";
-            trashIcon.title = "Delete";
-            trashIcon.addEventListener("click", () => {
-                if (confirm(`Delete "${task.trim()}"?`)) {
-                    fetch("/delete_task", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ task: task.trim() })
-                    }).then(() => location.reload());
-                }
-            });
+            const editIcon = createEditIcon(task)
+            const trashIcon = createTrashIcon(task)
 
             li.appendChild(checkbox);
             li.appendChild(label);

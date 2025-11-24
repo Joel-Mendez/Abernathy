@@ -23,6 +23,7 @@ ul {
     transition: opacity 0.2s ease;
     color: #aaa;
     font-size: 12px;
+    cursor: pointer;
     margin-left: 8px;
 }
 

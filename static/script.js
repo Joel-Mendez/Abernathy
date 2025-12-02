@@ -1,3 +1,22 @@
+function createCheckbox(task) {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = task.status === "complete";
+
+    checkbox.addEventListener("change", () => {
+        fetch("/update_status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                task: task.name,
+                status: checkbox.checked ? "complete" : "not started"
+            })
+        }).then(() => location.reload());
+    });
+
+    return checkbox;
+}
+
 function createEditIcon(task) {
     const editIcon = document.createElement("i");
     editIcon.className = "fas fa-pencil-alt";
@@ -54,22 +73,8 @@ fetch("/get_tasks")
             li.style.display = "flex";
             li.style.alignItems = "center";
             li.style.marginBottom = "8px";
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.checked = task.status === "complete";
-            checkbox.addEventListener("change", () => {
-                fetch("/update_status", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        task: task.name,
-                        status: checkbox.checked ? "complete" : "not started"
-                    })
-                }).then(() => location.reload());
-            });
+            
+            const checkbox = createCheckbox(task)
 
             const label = document.createElement("span");
             label.textContent = ` ${task.name}`;
@@ -137,21 +142,7 @@ fetch("/get_tasks")
             li.style.alignItems = "center";
             li.style.marginBottom = "8px";
 
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.checked = false;
-            checkbox.addEventListener("change", function () {
-                fetch("/update_status", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        task: task.trim(),
-                        status: checkbox.checked ? "complete" : "not started"
-                    })
-                }).then(() => location.reload());
-            });
+            const checkbox = createCheckbox(task)
 
             const label = document.createElement("span");
             label.textContent = ` ${task.trim()}`;

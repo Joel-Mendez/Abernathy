@@ -23,7 +23,17 @@ def init_db():
             date_created TEXT
         )
     """)
-    
+
+    # --- Knowledge Base ---
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS nodes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            content TEXT,
+            date_created TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
 

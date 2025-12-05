@@ -155,6 +155,19 @@ document.getElementById("addProjectBtn").addEventListener("click", function () {
     }
     });
 
+document.getElementById("addNodeBtn").addEventListener("click", function () {
+    const node = prompt("Node title?");
+    if (node && node.trim() !== "") {
+        fetch("/add_node", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ node: node.trim() })
+        }).then(() => location.reload());
+    }
+    });
+
 const menuButtons = document.querySelectorAll('.menuTab');
 const pages = {
     "Tasks": document.getElementById("tasksPage"),

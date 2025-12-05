@@ -17,7 +17,7 @@ def add_project():
 
     return jsonify({"message": f"Project '{project_name}' created successfully."})
 
-def get_projects(): ## To review
+def get_projects():
     conn = db.get_connection()
 
     cursor = conn.cursor()

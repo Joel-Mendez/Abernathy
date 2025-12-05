@@ -4,6 +4,7 @@ from datetime import datetime
 import db
 import task
 import project
+import node
 
 # Initialize app
 app = Flask(__name__) 
@@ -44,6 +45,22 @@ def edit_project(): return project.edit_project()
 
 @app.route("/delete_project", methods=["POST"])
 def delete_project(): return project.delete_project()
+
+# Knowledge Base Routes
+@app.route("/add_node", methods=["POST"])
+def add_node(): return node.add_node()
+
+@app.route("/get_nodes", methods=["GET"])
+def get_nodes(): return node.get_nodes()
+
+# @app.route("/update_status", methods=["POST"])
+# def update_status(): return node.update_status()
+
+@app.route("/edit_node", methods=["POST"])
+def edit_node(): return node.edit_node()
+
+@app.route("/delete_node", methods=["POST"])
+def delete_node(): return node.delete_node()
 
 # Run app
 if __name__ == "__main__":

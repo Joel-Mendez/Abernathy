@@ -13,6 +13,17 @@ def init_db():
             date_completed TEXT
         )
     """)
+
+    # --- Projects ---
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            date_created TEXT
+        )
+    """)
+    
     conn.commit()
     conn.close()
 

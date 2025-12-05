@@ -142,6 +142,19 @@ if (task && task.trim() !== "") {
 }
 });
 
+document.getElementById("addProjectBtn").addEventListener("click", function () {
+    const project = prompt("What project would you like to add?");
+    if (project && project.trim() !== "") {
+        fetch("/add_project", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ project: project.trim() })
+        }).then(() => location.reload());
+    }
+    });
+
 const menuButtons = document.querySelectorAll('.menuTab');
 const pages = {
     "Tasks": document.getElementById("tasksPage"),

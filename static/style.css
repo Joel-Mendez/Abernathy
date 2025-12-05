@@ -3,7 +3,8 @@ body {
     font-family: 'Inconsolata', monospace;
     font-size: 16px;
     line-height: 1.5;
-    padding-left: 26px; 
+    /* padding-left: 26px;  */
+    display: flex
 }
 
 h1 {
@@ -68,4 +69,31 @@ ul {
     background-color: #000000;
     color: white;
     cursor: pointer;
+}
+
+/* Sidebar */
+#mainMenu {
+    margin-top: 80px;
+    background-color: #ffffff;
+    padding-left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Buttons in sidebar */
+.menuTab {
+    background-color: transparent;
+    border: none;
+    font-size: 16px;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+}
+
+/* Main content */
+#mainContent {
+    background-color: #ffffff;
+    /* flex-grow: 1; */
+    padding-left: 26px;
 }

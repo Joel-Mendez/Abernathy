@@ -17,17 +17,81 @@
 
 </head>
 <body>
-    <h1>Tasks</h1>
-
-    <div id="viewToggle">
-        <button id="todoBtn">To-Do</button>
-        <button id="completedBtn">Completed</button>
+    <div id ="mainMenu">
+        <button class="menuTab" title ="Tasks">
+            <i class="fas fa-check-square"></i>
+        </button>
+        <button class="menuTab" title = "Projects">
+            <i class="fas fa-folder-open"></i>
+        </button>
+        <button class="menuTab" title="Progress">
+            <i class="fas fa-chart-line"></i>
+        </button>
+        <button class="menuTab" title="Calendar">
+            <i class="fas fa-calendar-alt"></i>
+        </button>
+        <button class="menuTab" title="People">
+            <i class="fas fa-users"></i>
+        </button>
+        <button class="menuTab" title = "Knowledge Base">
+            <i class="fas fa-brain"></i>
+        </button>
+        <button class="menuTab" title = "Goals">
+            <i class="fas fa-bullseye"></i>
+        </button>
     </div>
+    
+    <div id = "mainContent">
+        <div id = "tasksPage">
+            <h1>Tasks</h1>
 
-    <ul id="taskList"></ul>
-    <ul id="completedList" style="display: none;"></ul>
+            <div id="viewToggle">
+                <button id="todoBtn">To-Do</button>
+                <button id="completedBtn">Completed</button>
+            </div>
 
-    <button id="addTaskBtn">+</button>
+            <ul id="taskList"></ul>
+            <ul id="completedList" style="display: none;"></ul>
 
+            <button id="addTaskBtn">+</button>
+   
+        </div>
+         <!-- Projects Page -->
+        <div id="projectsPage" class="pageSection" style="display: none;">
+            <h1>Projects</h1>
+            <p>Project content will go here.</p>
+        </div>
+
+        <!-- Knowledge Base Page -->
+        <div id="knowledgePage" class="pageSection" style="display: none;">
+            <h1>Knowledge Base</h1>
+            <p>Knowledge content will go here.</p>
+        </div>
+
+        <!-- Progress Page -->
+        <div id="progressPage" class="pageSection" style="display: none;">
+            <h1>Progress Checker</h1>
+            <p>Visualizations of your productivity will go here.</p>
+        </div>
+
+        <!-- Calendar Page -->
+        <div id="calendarPage" class="pageSection" style="display: none;">
+            <h1>Calendar</h1>
+            <p>Calendar and schedule integration will go here.</p>
+        </div>
+
+        <!-- People Page -->
+        <div id="peoplePage" class="pageSection" style="display: none;">
+            <h1>People</h1>
+            <p>Contacts, family, team members, etc. will go here.</p>
+        </div>
+
+        <!-- Goals Page -->
+        <div id="goalsPage" class="pageSection" style="display: none;">
+            <h1>Goals</h1>
+            <p>Goal content will go here.</p>
+        </div>
+
+    </div>
 </body>
 </html>

@@ -1,3 +1,4 @@
+// Task Functions
 function createCheckbox(task) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -77,6 +78,7 @@ function renderTask(task, container){
     container.appendChild(li);
 }
 
+// Main Functions
 fetch("/get_tasks")
     .then(response => response.json())
     .then(data => {
@@ -106,6 +108,8 @@ window.onload = () => {
     }
 };
 
+
+// UI Actions
 document.getElementById("todoBtn").addEventListener("click", () => {
     localStorage.setItem("activeTab", "todo");
     document.getElementById("taskList").style.display = "block";
@@ -136,4 +140,35 @@ if (task && task.trim() !== "") {
         body: JSON.stringify({ task: task.trim() })
     }).then(() => location.reload());
 }
+});
+
+const menuButtons = document.querySelectorAll('.menuTab');
+const pages = {
+    "Tasks": document.getElementById("tasksPage"),
+    "Projects": document.getElementById("projectsPage"),
+    "Knowledge Base": document.getElementById("knowledgePage"),
+    "Goals": document.getElementById("goalsPage"),
+    "Progress": document.getElementById("progressPage"),
+    "Calendar": document.getElementById("calendarPage"),
+    "People": document.getElementById("peoplePage")
+};
+
+// Show the initial page (Tasks)
+pages["Tasks"].style.display = "block";
+
+// Add click listeners to menu buttons
+menuButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        const title = button.getAttribute("title");
+
+        // Hide all pages
+        Object.values(pages).forEach(page => page.style.display = "none");
+
+        // Show selected page
+        pages[title].style.display = "block";
+
+        // Optional: highlight active tab
+        menuButtons.forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+    });
 });

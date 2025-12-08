@@ -1,12 +1,19 @@
 import sqlite3 
 
-DB_PATH = "abernathy.db" 
+DB_PATH = "abernathy.db" # TO-DO: Make user specific?
 
 def init_db(): 
+    """
+    Initializing Database. 
+    Separate Tables for: 
+        - Tasks
+        - Projects
+        - Knowledge Base Nodes
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # --- Tasks ---
+    ##### Tasks ##############
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -16,7 +23,7 @@ def init_db():
         )
     """)
 
-    # --- Projects ---
+    ###### Projects ############
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +33,7 @@ def init_db():
         )
     """)
 
-    # --- Knowledge Base ---
+    ##### Knowledge Base ############
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS nodes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

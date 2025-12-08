@@ -1,20 +1,18 @@
-from flask import Flask, jsonify, render_template, request
-import sqlite3 
-from datetime import datetime
+from flask import Flask, render_template
 import db
 import task
 import project
 import node
 
-# --- Initialize app ---
+########### Initialize app ##########
 app = Flask(__name__) 
 
-# --- Home ---
+############# Home ##################
 @app.route("/")     
 def index():
     return render_template("index.html")
 
-# --- Task Routes ---
+######### Task Routes ###############
 @app.route("/add_task", methods=["POST"])
 def add_task(): return task.add_task()
 
@@ -30,7 +28,7 @@ def edit_task(): return task.edit_task()
 @app.route("/delete_task", methods=["POST"])
 def delete_task(): return task.delete_task()
 
-# --- Project Routes ---
+######## Project Routes ###################
 @app.route("/add_project", methods=["POST"])
 def add_project(): return project.add_project()
 
@@ -46,7 +44,7 @@ def edit_project(): return project.edit_project()
 @app.route("/delete_project", methods=["POST"])
 def delete_project(): return project.delete_project()
 
-# --- Knowledge Base Routes ---
+##### Knowledge Base Routes #################
 @app.route("/add_node", methods=["POST"])
 def add_node(): return node.add_node()
 
@@ -62,7 +60,7 @@ def edit_node(): return node.edit_node()
 @app.route("/delete_node", methods=["POST"])
 def delete_node(): return node.delete_node()
 
-# --- Run app ---
+##### Run App ##################################
 if __name__ == "__main__":
     db.init_db()
     app.run(debug=True)  

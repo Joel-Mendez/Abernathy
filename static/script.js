@@ -196,5 +196,35 @@ menuButtons.forEach(button => {
         // Optional: highlight active tab
         menuButtons.forEach(btn => btn.classList.remove("active"));
         button.classList.add("active");
+
+        if (title === "Projects") {
+            loadProjects();  // ⬅ Load when tab clicked
+        }
+        if (title === "Knowledge Base") {
+            loadKnowledge();  // ⬅ Load when Knowledge tab clicked
+        }
     });
 });
+
+function renderProject(project) {
+    const li = document.createElement("li");
+    li.className = "project-item";
+
+    const link = document.createElement("a");
+    link.textContent = project.name;
+    link.href = `/project/${project.id}`;  // 🔗 Link to the project page
+    link.style.textDecoration = "none";
+
+    li.appendChild(link);
+    document.getElementById("projectList").appendChild(li);
+}
+
+function loadProjects() {
+    fetch("/get_projects")
+        .then(response => response.json())
+        .then(data => {
+            const list = document.getElementById("projectList");
+            list.innerHTML = "";
+            data.projects.forEach(renderProject);
+        });
+}

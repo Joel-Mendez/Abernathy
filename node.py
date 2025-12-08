@@ -28,7 +28,7 @@ def get_nodes():
     node_list = [dict(row) for row in rows]
     return jsonify({"nodes": node_list})
 
-def update_status(): ## to review
+def update_status(): 
     data = request.get_json()
     node_name = data.get("node")
     new_status = data.get("status")

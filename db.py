@@ -5,6 +5,8 @@ DB_PATH = "abernathy.db"
 def init_db(): 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # --- Tasks ---
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 

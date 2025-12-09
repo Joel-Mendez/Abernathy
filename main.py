@@ -19,8 +19,8 @@ def add_task(): return task.add_task()
 @app.route("/get_tasks", methods=["GET"])
 def get_tasks(): return task.get_tasks()
 
-@app.route("/update_status", methods=["POST"])
-def update_status(): return task.update_status()
+@app.route("/update_task_status", methods=["POST"])
+def update_task_status(): return task.update_status()
 
 @app.route("/edit_task", methods=["POST"])
 def edit_task(): return task.edit_task()
@@ -59,6 +59,31 @@ def edit_node(): return node.edit_node()
 
 @app.route("/delete_node", methods=["POST"])
 def delete_node(): return node.delete_node()
+
+@app.route("/node/<int:node_id>")
+def view_node(node_id):
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM nodes WHERE id = ?", (node_id,))
+    node = cursor.fetchone()
+    conn.close()
+    
+    if not node:
+        return "Node not found", 404
+    
+    return render_template("node.html", node=node)
+
+@app.route("/update_node", methods=["POST"])
+def update_node():
+    data = request.get_json()
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE nodes SET name = ?, content = ? WHERE id = ?
+    """, (data["name"], data["content"], data["id"]))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
 
 ##### Run App ##################################
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ def get_projects():
     project_list = [dict(row) for row in rows]
     return jsonify({"projects": project_list})
 
-def update_status(): ## to review
+def update_status(): 
     data = request.get_json()
     project_name = data.get("project")
     new_status = data.get("status")

@@ -5,7 +5,7 @@ function createCheckbox(task) {
     checkbox.checked = task.status === "complete";
 
     checkbox.addEventListener("change", () => {
-        fetch("/update_status", {
+        fetch("/update_task_status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -181,6 +181,9 @@ const pages = {
 
 // Show the initial page (Tasks)
 pages["Tasks"].style.display = "block";
+if (menuButtons.length > 0) {
+    menuButtons[0].classList.add("active");
+}
 
 // Add click listeners to menu buttons
 menuButtons.forEach(button => {
@@ -201,7 +204,7 @@ menuButtons.forEach(button => {
             loadProjects();  // ⬅ Load when tab clicked
         }
         if (title === "Knowledge Base") {
-            loadKnowledge();  // ⬅ Load when Knowledge tab clicked
+            loadNodes();  // ⬅ Load when Knowledge tab clicked
         }
     });
 });
@@ -226,5 +229,28 @@ function loadProjects() {
             const list = document.getElementById("projectList");
             list.innerHTML = "";
             data.projects.forEach(renderProject);
+        });
+}
+
+function renderNode(node) {
+    const li = document.createElement("li");
+    li.className = "node-item";
+
+    const link = document.createElement("a");
+    link.textContent = node.name;
+    link.href = `/node/${node.id}`;  
+    link.style.textDecoration = "none";
+
+    li.appendChild(link);
+    document.getElementById("knowledgeList").appendChild(li);
+}
+
+function loadNodes() {
+    fetch("/get_nodes")
+        .then(response => response.json())
+        .then(data => {
+            const list = document.getElementById("knowledgeList");
+            list.innerHTML = "";
+            data.nodes.forEach(renderNode);
         });
 }

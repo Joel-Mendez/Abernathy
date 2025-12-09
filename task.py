@@ -28,7 +28,7 @@ def get_tasks(): ## To review
     task_list = [dict(row) for row in rows]
     return jsonify({"tasks": task_list})
 
-def update_status(): ## to review
+def update_status(): 
     data = request.get_json()
     task_name = data.get("task")
     new_status = data.get("status")

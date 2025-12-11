@@ -3,6 +3,9 @@ from datetime import datetime
 import db
 
 def add_task():
+    """
+    Retrieves user input (task_name as text) and creates a new entry into the Tasks table
+    """
     data = request.get_json()
     task_name = data.get("task")
 

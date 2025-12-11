@@ -35,9 +35,6 @@ def add_project(): return project.add_project()
 @app.route("/get_projects", methods=["GET"])
 def get_projects(): return project.get_projects()
 
-@app.route("/update_project_status", methods=["POST"])
-def update_project_status(): return project.update_status()
-
 @app.route("/edit_project", methods=["POST"])
 def edit_project(): return project.edit_project()
 
@@ -51,40 +48,11 @@ def add_node(): return node.add_node()
 @app.route("/get_nodes", methods=["GET"])
 def get_nodes(): return node.get_nodes()
 
-@app.route("/update_node_status", methods=["POST"])
-def update_node_status(): return node.update_status()
-
 @app.route("/edit_node", methods=["POST"])
 def edit_node(): return node.edit_node()
 
 @app.route("/delete_node", methods=["POST"])
 def delete_node(): return node.delete_node()
-
-# TODO move to node.py 
-@app.route("/node/<int:node_id>")
-def view_node(node_id):
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM nodes WHERE id = ?", (node_id,))
-    node = cursor.fetchone()
-    conn.close()
-    
-    if not node:
-        return "Node not found", 404
-    
-    return render_template("node.html", node=node)
-# TODO move to node.py 
-@app.route("/update_node", methods=["POST"])
-def update_node():
-    data = request.get_json()
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE nodes SET name = ?, content = ? WHERE id = ?
-    """, (data["name"], data["content"], data["id"]))
-    conn.commit()
-    conn.close()
-    return jsonify({"success": True})
 
 ##### Run App ##################################
 if __name__ == "__main__":

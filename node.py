@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify, request, render_template
 from datetime import datetime
 import db
 
@@ -27,25 +27,6 @@ def get_nodes():
 
     node_list = [dict(row) for row in rows]
     return jsonify({"nodes": node_list})
-
-def update_status(): 
-    data = request.get_json()
-    node_name = data.get("node")
-    new_status = data.get("status")
-
-    conn = db.get_connection()
-    cursor = conn.cursor()
-
-    if new_status == "complete":
-        timestamp = datetime.now().isoformat()
-        cursor.execute("UPDATE nodes SET status = ?, date_completed = ? WHERE name = ?", (new_status, timestamp, node_name))
-    else:
-        cursor.execute("UPDATE nodes SET status = ?, date_completed = NULL WHERE name = ?", (new_status, node_name))
-
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "Status updated"})
 
 def edit_node():
     data = request.get_json()

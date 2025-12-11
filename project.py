@@ -28,25 +28,6 @@ def get_projects():
     project_list = [dict(row) for row in rows]
     return jsonify({"projects": project_list})
 
-def update_status(): 
-    data = request.get_json()
-    project_name = data.get("project")
-    new_status = data.get("status")
-
-    conn = db.get_connection()
-    cursor = conn.cursor()
-
-    if new_status == "complete":
-        timestamp = datetime.now().isoformat()
-        cursor.execute("UPDATE projects SET status = ?, date_completed = ? WHERE name = ?", (new_status, timestamp, project_name))
-    else:
-        cursor.execute("UPDATE projects SET status = ?, date_completed = NULL WHERE name = ?", (new_status, project_name))
-
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "Status updated"})
-
 def edit_project():
     data = request.get_json()
     old_name = data["old"]

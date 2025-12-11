@@ -56,7 +56,21 @@ ul {
 }
 
 /* Task Button */
-#addTaskBtn {
+.addBtn {
+    font-family: inherit;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    font-size: 32px;        
+    border: none;
+    border-radius: 50%;
+    background-color: #000000;
+    color: white;
+    cursor: pointer; 
+}
+/* #addTaskBtn {
     font-family: inherit;
     position: fixed;
     bottom: 20px;
@@ -99,7 +113,7 @@ ul {
     background-color: #000000;
     color: white;
     cursor: pointer;
-}
+} */
 
 /* Sidebar */
 #mainMenu {

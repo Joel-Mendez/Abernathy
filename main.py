@@ -60,6 +60,7 @@ def edit_node(): return node.edit_node()
 @app.route("/delete_node", methods=["POST"])
 def delete_node(): return node.delete_node()
 
+# TODO move to node.py 
 @app.route("/node/<int:node_id>")
 def view_node(node_id):
     conn = db.get_connection()
@@ -72,7 +73,7 @@ def view_node(node_id):
         return "Node not found", 404
     
     return render_template("node.html", node=node)
-
+# TODO move to node.py 
 @app.route("/update_node", methods=["POST"])
 def update_node():
     data = request.get_json()

@@ -2,6 +2,13 @@ import sqlite3
 
 DB_PATH = "abernathy.db" # TO-DO: Make user specific?
 
+##### CONNECTION SETUP #####
+def get_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+##### INITIALIZE TABLES #####
 def init_db(): 
     """
     Initializing Database. 
@@ -19,11 +26,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-
-def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 def init_task_table(cursor):
     cursor.execute("""
@@ -54,3 +56,44 @@ def init_kb_table(cursor):
             date_created TEXT
         )
     """)
+
+##### CRUD #####
+# CREATE
+def insert_row(table,name): 
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"INSERT INTO {table} (name) VALUES (?)", (name,))
+    conn.commit()
+    conn.close()
+
+# READ
+def get_all(table):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM {table}")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_row(table,id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM {table} WHERE id=?", (id,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+# UPDATE
+def update_name(table,id,new_name):
+    conn = get_connection()
+    conn.execute(f"UPDATE {table} SET name = ? WHERE id = ?", (new_name, id))
+    conn.commit()
+    conn.close()
+
+# DELETE
+def delete_row(table,id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"DELETE FROM {table} WHERE id=?",(id,))
+    conn.commit()
+    conn.close()

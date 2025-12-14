@@ -26,10 +26,10 @@ function createEditIcon(task) {
     editIcon.addEventListener("click", () => {
         const newName = prompt("Edit task name:", task.name);
         if (newName && newName.trim() !== "") {
-            fetch("/edit_task", {
+            fetch("/rename_task", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ old: task.name, new: newName.trim() })
+                body: JSON.stringify({ id: task.id, new: newName.trim() })
             }).then(() => location.reload());
         }
     });
@@ -47,7 +47,7 @@ function createTrashIcon(task) {
             fetch("/delete_task", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ task: task.name })
+                body: JSON.stringify({ id: task.id })
             }).then(() => location.reload());
         }
     });

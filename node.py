@@ -2,6 +2,8 @@ from flask import jsonify, request, render_template
 from datetime import datetime
 import db
 
+TABLE = "nodes"
+
 def add_node():
     data = request.get_json()
     node_name = data.get("node")
@@ -9,44 +11,27 @@ def add_node():
     if not node_name:
         return jsonify({"message": "No node provided"}), 400
 
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO nodes (name) VALUES (?)", (node_name,))
-    conn.commit()
-    conn.close()
+    db.insert_row(TABLE,node_name)
 
     return jsonify({"message": f"node '{node_name}' created successfully."})
 
 def get_nodes():
-    conn = db.get_connection()
-
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM nodes")
-    rows = cursor.fetchall()
-    conn.close()
-
-    node_list = [dict(row) for row in rows]
+    node_list = db.get_all(TABLE)
     return jsonify({"nodes": node_list})
 
-def edit_node():
+def rename_node(): 
     data = request.get_json()
-    old_name = data["old"]
+    id = data["id"]
     new_name = data["new"]
     
-    conn = db.get_connection()
-    conn.execute("UPDATE nodes SET name = ? WHERE name = ?", (new_name, old_name))
-    conn.commit()
-    conn.close()
+    db.update_name(TABLE,id,new_name)
     
     return jsonify(success=True)
 
 def delete_node():
     data = request.get_json()
-    node_name = data["node"]
+    id = data["id"] 
     
-    conn = db.get_connection()
-    conn.execute("DELETE FROM nodes WHERE name = ?", (node_name,))
-    conn.commit()
-    conn.close()
+    db.delete_row(TABLE,id)
     
     return jsonify(success=True)

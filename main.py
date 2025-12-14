@@ -22,8 +22,8 @@ def get_tasks(): return task.get_tasks()
 @app.route("/update_task_status", methods=["POST"])
 def update_task_status(): return task.update_status()
 
-@app.route("/edit_task", methods=["POST"])
-def edit_task(): return task.edit_task()
+@app.route("/rename_task", methods=["POST"]) #change in frontend
+def rename_task(): return task.rename_task()
 
 @app.route("/delete_task", methods=["POST"])
 def delete_task(): return task.delete_task()
@@ -35,8 +35,8 @@ def add_project(): return project.add_project()
 @app.route("/get_projects", methods=["GET"])
 def get_projects(): return project.get_projects()
 
-@app.route("/edit_project", methods=["POST"])
-def edit_project(): return project.edit_project()
+@app.route("/rename_project", methods=["POST"]) #change in frontend
+def rename_project(): return project.rename_project()
 
 @app.route("/delete_project", methods=["POST"])
 def delete_project(): return project.delete_project()
@@ -48,8 +48,8 @@ def add_node(): return node.add_node()
 @app.route("/get_nodes", methods=["GET"])
 def get_nodes(): return node.get_nodes()
 
-@app.route("/edit_node", methods=["POST"])
-def edit_node(): return node.edit_node()
+@app.route("/rename_node", methods=["POST"]) #change in frontend
+def rename_node(): return node.rename_node()
 
 @app.route("/delete_node", methods=["POST"])
 def delete_node(): return node.delete_node()

@@ -18,6 +18,12 @@ def list_nodes():
     node_list = db.get_all(TABLE)
     return jsonify({"nodes": node_list})
 
+def get_node(node_id):
+    node = db.get_row(TABLE, node_id)
+    if not node:
+        return jsonify({"message": "Node not found"}), 404
+    return jsonify(node)
+
 def update_node(node_id):
     data = request.get_json() or {}
     new_name = data.get("name") or data.get("new")

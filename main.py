@@ -45,8 +45,10 @@ def nodes_collection():
         return node.list_nodes()
     return node.create_node()
 
-@app.route("/nodes/<int:node_id>", methods=["PATCH", "DELETE"])
+@app.route("/nodes/<int:node_id>", methods=["GET", "PATCH", "DELETE"])
 def node_detail(node_id):
+    if request.method == "GET":
+        return node.get_node(node_id)
     if request.method == "PATCH":
         return node.update_node(node_id)
     return node.delete_node(node_id)

@@ -67,8 +67,14 @@
         <!-- Knowledge Base Page -->
         <div id="knowledgePage" class="pageSection" style="display: none;">
             <h1>Knowledge Base</h1>
-            <!-- <p>Knowledge content will go here.</p> -->
-            <ul id = "knowledgeList"></ul>
+            <div id="knowledgeListView">
+                <ul id="knowledgeList"></ul>
+            </div>
+            <div id="knowledgeContentView" style="display: none;">
+                <button id="knowledgeBackBtn">Back</button>
+                <h2 id="knowledgeTitle"></h2>
+                <div id="knowledgeBody"></div>
+            </div>
             <button class="addBtn" id ="addNodeBtn">+</button>
         </div>
 

@@ -147,3 +147,41 @@ ul {
     /* flex-grow: 1; */
     padding-left: 26px;
 }
+
+/* Knowledge Base */
+#knowledgeContentView {
+    padding: 12px;
+    min-height: 200px;
+    max-width: 720px;
+}
+
+#knowledgeBody {
+    white-space: pre-wrap;
+}
+
+#knowledgeBackBtn {
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: 1px solid #000;
+    background: #000;
+    color: #fff;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#knowledgeBackBtn::before {
+    content: "<";
+    font-size: 16px;
+    line-height: 1;
+}
+
+#knowledgeBackBtn:hover {
+    background: #111;
+    transform: translateX(-1px);
+}

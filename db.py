@@ -74,6 +74,16 @@ def insert_row(table,name):
     conn.commit()
     conn.close()
 
+def insert_task(name, project_id=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO tasks (name, project_id) VALUES (?, ?)",
+        (name, project_id),
+    )
+    conn.commit()
+    conn.close()
+
 # READ
 def get_all(table):
     conn = get_connection()

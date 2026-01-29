@@ -14,7 +14,11 @@ def create_task():
     if not task_name or not task_name.strip():
         return jsonify({"message": "No task provided"}), 400
 
-    db.insert_row(TABLE, task_name.strip())
+    project_id = data.get("project_id")
+    if project_id is not None:
+        db.insert_task(task_name.strip(), project_id)
+    else:
+        db.insert_row(TABLE, task_name.strip())
 
     return jsonify({"message": f"Task '{task_name.strip()}' saved successfully."})
 

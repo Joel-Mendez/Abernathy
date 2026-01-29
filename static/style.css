@@ -4,7 +4,10 @@ body {
     font-size: 16px;
     line-height: 1.5;
     /* padding-left: 26px;  */
-    display: flex
+    display: flex;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
 }
 
 h1 {
@@ -178,13 +181,16 @@ ul {
     padding: 6px 12px;
     cursor: pointer;
     border: 1px solid #000;
-    background: white;
+    background: #fff;
     color: #000;
+    border-radius: 999px;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
 #viewToggle button.active {
     background: #000;
-    color: white;
+    color: #fff;
+    transform: translateX(-1px);
 }
 
 /* Task Button */
@@ -255,6 +261,7 @@ ul {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: calc(100vh - 80px);
 }
 
 /* Buttons in sidebar */
@@ -278,6 +285,10 @@ ul {
     background-color: #ffffff;
     /* flex-grow: 1; */
     padding-left: 26px;
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 20px;
+    padding-bottom: 40px;
 }
 
 /* Knowledge Base */

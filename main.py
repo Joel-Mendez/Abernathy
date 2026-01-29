@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import db
 import task
 import project
@@ -13,46 +13,43 @@ def index():
     return render_template("index.html")
 
 ######### Task Routes ###############
-@app.route("/add_task", methods=["POST"])
-def add_task(): return task.add_task()
+@app.route("/tasks", methods=["GET", "POST"])
+def tasks_collection():
+    if request.method == "GET":
+        return task.list_tasks()
+    return task.create_task()
 
-@app.route("/get_tasks", methods=["GET"])
-def get_tasks(): return task.get_tasks()
-
-@app.route("/update_task_status", methods=["POST"])
-def update_task_status(): return task.update_status()
-
-@app.route("/rename_task", methods=["POST"]) #change in frontend
-def rename_task(): return task.rename_task()
-
-@app.route("/delete_task", methods=["POST"])
-def delete_task(): return task.delete_task()
+@app.route("/tasks/<int:task_id>", methods=["PATCH", "DELETE"])
+def task_detail(task_id):
+    if request.method == "PATCH":
+        return task.update_task(task_id)
+    return task.delete_task(task_id)
 
 ######## Project Routes ###################
-@app.route("/add_project", methods=["POST"])
-def add_project(): return project.add_project()
+@app.route("/projects", methods=["GET", "POST"])
+def projects_collection():
+    if request.method == "GET":
+        return project.list_projects()
+    return project.create_project()
 
-@app.route("/get_projects", methods=["GET"])
-def get_projects(): return project.get_projects()
-
-@app.route("/rename_project", methods=["POST"]) #change in frontend
-def rename_project(): return project.rename_project()
-
-@app.route("/delete_project", methods=["POST"])
-def delete_project(): return project.delete_project()
+@app.route("/projects/<int:project_id>", methods=["PATCH", "DELETE"])
+def project_detail(project_id):
+    if request.method == "PATCH":
+        return project.update_project(project_id)
+    return project.delete_project(project_id)
 
 ##### Knowledge Base Routes #################
-@app.route("/add_node", methods=["POST"])
-def add_node(): return node.add_node()
+@app.route("/nodes", methods=["GET", "POST"])
+def nodes_collection():
+    if request.method == "GET":
+        return node.list_nodes()
+    return node.create_node()
 
-@app.route("/get_nodes", methods=["GET"])
-def get_nodes(): return node.get_nodes()
-
-@app.route("/rename_node", methods=["POST"]) #change in frontend
-def rename_node(): return node.rename_node()
-
-@app.route("/delete_node", methods=["POST"])
-def delete_node(): return node.delete_node()
+@app.route("/nodes/<int:node_id>", methods=["PATCH", "DELETE"])
+def node_detail(node_id):
+    if request.method == "PATCH":
+        return node.update_node(node_id)
+    return node.delete_node(node_id)
 
 ##### Run App ##################################
 if __name__ == "__main__":

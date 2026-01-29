@@ -1,36 +1,37 @@
 from flask import jsonify, request
-from datetime import datetime
 import db
 
 TABLE = "projects"
 
-def add_project():
-    data = request.get_json()
-    project_name = data.get("project")
+def create_project():
+    data = request.get_json() or {}
+    project_name = data.get("name") or data.get("project")
 
-    if not project_name:
+    if not project_name or not project_name.strip():
         return jsonify({"message": "No project provided"}), 400
 
-    db.insert_row(TABLE,project_name)
+    db.insert_row(TABLE, project_name.strip())
 
-    return jsonify({"message": f"Project '{project_name}' created successfully."})
+    return jsonify({"message": f"Project '{project_name.strip()}' created successfully."})
 
-def get_projects():
+def list_projects():
     project_list = db.get_all(TABLE)
     return jsonify({"projects": project_list})
 
-def rename_project():
-    data = request.get_json()
-    id = data["id"]
-    new_name = data["new"]
-    
-    db.update_name(TABLE,id,new_name)
-    
-    return jsonify(success=True)
+def update_project(project_id):
+    data = request.get_json() or {}
+    new_name = data.get("name") or data.get("new")
 
-def delete_project():
-    data = request.get_json()
-    id = data["id"]
-    db.delete_row(TABLE,id)
-    
+    if new_name is None:
+        return jsonify({"message": "No valid fields provided"}), 400
+
+    new_name = new_name.strip()
+    if not new_name:
+        return jsonify({"message": "Name cannot be empty"}), 400
+
+    db.update_name(TABLE, project_id, new_name)
+    return jsonify({"message": "Project updated"})
+
+def delete_project(project_id):
+    db.delete_row(TABLE, project_id)
     return jsonify(success=True)

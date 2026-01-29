@@ -1,37 +1,37 @@
-from flask import jsonify, request, render_template
-from datetime import datetime
+from flask import jsonify, request
 import db
 
 TABLE = "nodes"
 
-def add_node():
-    data = request.get_json()
-    node_name = data.get("node")
+def create_node():
+    data = request.get_json() or {}
+    node_name = data.get("name") or data.get("node")
 
-    if not node_name:
+    if not node_name or not node_name.strip():
         return jsonify({"message": "No node provided"}), 400
 
-    db.insert_row(TABLE,node_name)
+    db.insert_row(TABLE, node_name.strip())
 
-    return jsonify({"message": f"node '{node_name}' created successfully."})
+    return jsonify({"message": f"node '{node_name.strip()}' created successfully."})
 
-def get_nodes():
+def list_nodes():
     node_list = db.get_all(TABLE)
     return jsonify({"nodes": node_list})
 
-def rename_node(): 
-    data = request.get_json()
-    id = data["id"]
-    new_name = data["new"]
-    
-    db.update_name(TABLE,id,new_name)
-    
-    return jsonify(success=True)
+def update_node(node_id):
+    data = request.get_json() or {}
+    new_name = data.get("name") or data.get("new")
 
-def delete_node():
-    data = request.get_json()
-    id = data["id"] 
-    
-    db.delete_row(TABLE,id)
-    
+    if new_name is None:
+        return jsonify({"message": "No valid fields provided"}), 400
+
+    new_name = new_name.strip()
+    if not new_name:
+        return jsonify({"message": "Name cannot be empty"}), 400
+
+    db.update_name(TABLE, node_id, new_name)
+    return jsonify({"message": "Node updated"})
+
+def delete_node(node_id):
+    db.delete_row(TABLE, node_id)
     return jsonify(success=True)

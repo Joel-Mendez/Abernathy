@@ -90,6 +90,17 @@ def update_name(table,id,new_name):
     conn.commit()
     conn.close()
 
+def update_fields(table, row_id, fields):
+    if not fields:
+        return
+    assignments = ", ".join(f"{column} = ?" for column in fields)
+    values = list(fields.values())
+    values.append(row_id)
+    conn = get_connection()
+    conn.execute(f"UPDATE {table} SET {assignments} WHERE id = ?", values)
+    conn.commit()
+    conn.close()
+
 # DELETE
 def delete_row(table,id):
     conn = get_connection()

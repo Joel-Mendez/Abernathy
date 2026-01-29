@@ -185,3 +185,19 @@ ul {
     background: #111;
     transform: translateX(-1px);
 }
+
+#knowledgeHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+#knowledgeBody.is-editing {
+    min-height: 320px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    white-space: pre-wrap;
+}

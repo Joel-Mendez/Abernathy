@@ -43,6 +43,9 @@ def update_task(task_id):
     if "project_id" in data:
         updates["project_id"] = data["project_id"]
 
+    if "due_date" in data:
+        updates["due_date"] = data["due_date"]
+
     if not updates:
         return jsonify({"message": "No valid fields provided"}), 400
 

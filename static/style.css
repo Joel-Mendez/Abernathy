@@ -18,7 +18,9 @@ ul {
     margin-top: 0px;
 }
 
-.task-item i {
+.task-item i,
+.project-item i,
+.node-item i {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.2s ease;
@@ -28,7 +30,9 @@ ul {
     margin-left: 8px;
 }
 
-.task-item:hover i {
+.task-item:hover i,
+.project-item:hover i,
+.node-item:hover i {
     visibility: visible;
     opacity: 1;
 }
@@ -100,6 +104,64 @@ ul {
     border-radius: 999px;
     border: 1px solid #000;
     background: #fff;
+}
+
+.project-picker-assign {
+    background: #000;
+    color: #fff;
+}
+
+/* Due Date Picker */
+.due-date-picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.due-date-picker {
+    background: #fff;
+    padding: 16px;
+    border-radius: 10px;
+    min-width: 280px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.due-date-picker-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.due-date-picker-input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 12px;
+    font-family: inherit;
+}
+
+.due-date-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.due-date-picker-clear,
+.due-date-picker-cancel,
+.due-date-picker-save {
+    font-family: inherit;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 999px;
+    border: 1px solid #000;
+    background: #fff;
+}
+
+.due-date-picker-save {
+    background: #000;
+    color: #fff;
 }
 
 

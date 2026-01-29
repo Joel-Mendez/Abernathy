@@ -34,13 +34,16 @@ def init_task_table(cursor):
             name TEXT NOT NULL,
             status TEXT DEFAULT 'not started',
             date_completed TEXT,
-            project_id INTEGER
+            project_id INTEGER,
+            due_date TEXT
         )
     """)
     cursor.execute("PRAGMA table_info(tasks)")
     columns = [row[1] for row in cursor.fetchall()]
     if "project_id" not in columns:
         cursor.execute("ALTER TABLE tasks ADD COLUMN project_id INTEGER")
+    if "due_date" not in columns:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN due_date TEXT")
 
 def init_project_table(cursor):
     cursor.execute("""

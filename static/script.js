@@ -51,6 +51,78 @@ function createTrashIcon(task) {
     return trashIcon;
 }
 
+function createDueDateIcon(task) {
+    const dateIcon = document.createElement("i");
+    dateIcon.className = "fas fa-calendar";
+    dateIcon.title = "Set due date";
+
+    dateIcon.addEventListener("click", () => {
+        showDueDatePicker(task);
+    });
+
+    return dateIcon;
+}
+
+function createProjectEditIcon(project) {
+    const editIcon = document.createElement("i");
+    editIcon.className = "fas fa-pencil-alt";
+    editIcon.title = "Edit";
+    editIcon.addEventListener("click", () => {
+        const newName = prompt("Edit project name:", project.name);
+        if (newName && newName.trim() !== "") {
+            fetch(`/projects/${project.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newName.trim() })
+            }).then(() => loadProjects());
+        }
+    });
+    return editIcon;
+}
+
+function createProjectTrashIcon(project) {
+    const trashIcon = document.createElement("i");
+    trashIcon.className = "fas fa-trash";
+    trashIcon.title = "Delete";
+    trashIcon.addEventListener("click", () => {
+        if (confirm(`Delete "${project.name}"?`)) {
+            fetch(`/projects/${project.id}`, { method: "DELETE" })
+                .then(() => loadProjects());
+        }
+    });
+    return trashIcon;
+}
+
+function createNodeEditIcon(node) {
+    const editIcon = document.createElement("i");
+    editIcon.className = "fas fa-pencil-alt";
+    editIcon.title = "Edit";
+    editIcon.addEventListener("click", () => {
+        const newName = prompt("Edit node name:", node.name);
+        if (newName && newName.trim() !== "") {
+            fetch(`/nodes/${node.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newName.trim() })
+            }).then(() => loadNodes());
+        }
+    });
+    return editIcon;
+}
+
+function createNodeTrashIcon(node) {
+    const trashIcon = document.createElement("i");
+    trashIcon.className = "fas fa-trash";
+    trashIcon.title = "Delete";
+    trashIcon.addEventListener("click", () => {
+        if (confirm(`Delete "${node.name}"?`)) {
+            fetch(`/nodes/${node.id}`, { method: "DELETE" })
+                .then(() => loadNodes());
+        }
+    });
+    return trashIcon;
+}
+
 let projectsCache = [];
 
 function createAssignIcon(task) {
@@ -163,6 +235,7 @@ function renderTask(task, container, projectMap){
 
     const editIcon = createEditIcon(task)
     const assignIcon = task.status === "complete" ? null : createAssignIcon(task)
+    const dueDateIcon = task.status === "complete" ? null : createDueDateIcon(task)
     const trashIcon = createTrashIcon(task)
 
     li.appendChild(checkbox);
@@ -170,6 +243,9 @@ function renderTask(task, container, projectMap){
     li.appendChild(editIcon);
     if (assignIcon) {
         li.appendChild(assignIcon);
+    }
+    if (dueDateIcon) {
+        li.appendChild(dueDateIcon);
     }
     li.appendChild(trashIcon);
     container.appendChild(li);
@@ -299,6 +375,9 @@ function showPage(title) {
     if (title === "Progress") {
         loadProgressLog();
     }
+    if (title === "Calendar") {
+        loadCalendarLog();
+    }
 }
 
 showPage("Tasks");
@@ -325,7 +404,12 @@ function renderProject(project) {
         loadProjectContent(project.id);
     });
 
+    const editIcon = createProjectEditIcon(project);
+    const trashIcon = createProjectTrashIcon(project);
+
     li.appendChild(link);
+    li.appendChild(editIcon);
+    li.appendChild(trashIcon);
     document.getElementById("projectList").appendChild(li);
 }
 
@@ -411,6 +495,126 @@ function loadProgressLog() {
         });
 }
 
+function loadCalendarLog() {
+    fetch("/tasks")
+        .then(response => response.json())
+        .then(data => {
+            const log = document.getElementById("calendarLog");
+            log.innerHTML = "";
+            const withDueDates = (data.tasks || [])
+                .filter(task => task.due_date)
+                .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+
+            if (withDueDates.length === 0) {
+                const empty = document.createElement("li");
+                empty.textContent = "No due dates set yet.";
+                log.appendChild(empty);
+                return;
+            }
+
+            const groups = {};
+            withDueDates.forEach(task => {
+                const dateKey = formatDateHeading(new Date(task.due_date));
+                if (!groups[dateKey]) {
+                    groups[dateKey] = [];
+                }
+                groups[dateKey].push(task);
+            });
+
+            Object.keys(groups).forEach(dateKey => {
+                const heading = document.createElement("li");
+                heading.textContent = dateKey;
+                heading.style.fontWeight = "700";
+                heading.style.marginTop = "10px";
+                log.appendChild(heading);
+
+                groups[dateKey].forEach(task => {
+                    const item = document.createElement("li");
+                    item.textContent = task.name;
+                    log.appendChild(item);
+                });
+            });
+        });
+}
+
+function showDueDatePicker(task) {
+    const existingOverlay = document.getElementById("dueDatePickerOverlay");
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    const overlay = document.createElement("div");
+    overlay.id = "dueDatePickerOverlay";
+    overlay.className = "due-date-picker-overlay";
+
+    const panel = document.createElement("div");
+    panel.className = "due-date-picker";
+
+    const title = document.createElement("div");
+    title.className = "due-date-picker-title";
+    title.textContent = "Set due date";
+
+    const input = document.createElement("input");
+    input.type = "date";
+    input.className = "due-date-picker-input";
+    if (task.due_date) {
+        input.value = task.due_date;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "due-date-picker-actions";
+
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "due-date-picker-clear";
+    clearBtn.textContent = "Clear";
+    clearBtn.addEventListener("click", () => {
+        fetch(`/tasks/${task.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ due_date: null })
+        }).then(() => location.reload());
+    });
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "due-date-picker-cancel";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", () => overlay.remove());
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "due-date-picker-save";
+    saveBtn.textContent = "Save";
+    saveBtn.addEventListener("click", () => {
+        if (!input.value) {
+            return;
+        }
+        fetch(`/tasks/${task.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ due_date: input.value })
+        }).then(() => location.reload());
+    });
+
+    actions.appendChild(clearBtn);
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+
+    panel.appendChild(title);
+    panel.appendChild(input);
+    panel.appendChild(actions);
+    overlay.appendChild(panel);
+
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+            overlay.remove();
+        }
+    });
+
+    document.body.appendChild(overlay);
+    input.focus();
+}
 function formatDateHeading(date) {
     const parts = new Intl.DateTimeFormat("en-US", {
         weekday: "short",
@@ -444,7 +648,12 @@ function renderNode(node) {
         loadNodeContent(node.id);
     });
 
+    const editIcon = createNodeEditIcon(node);
+    const trashIcon = createNodeTrashIcon(node);
+
     li.appendChild(link);
+    li.appendChild(editIcon);
+    li.appendChild(trashIcon);
     document.getElementById("knowledgeList").appendChild(li);
 }
 

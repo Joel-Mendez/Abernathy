@@ -18,6 +18,13 @@ def list_projects():
     project_list = db.get_all(TABLE)
     return jsonify({"projects": project_list})
 
+def get_project(project_id):
+    project = db.get_row(TABLE, project_id)
+    if not project:
+        return jsonify({"message": "Project not found"}), 404
+    tasks = db.get_tasks_by_project(project_id)
+    return jsonify({"project": project, "tasks": tasks})
+
 def update_project(project_id):
     data = request.get_json() or {}
     new_name = data.get("name") or data.get("new")

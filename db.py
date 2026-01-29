@@ -88,6 +88,14 @@ def get_row(table,id):
     conn.close()
     return dict(row) if row else None
 
+def get_tasks_by_project(project_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE project_id = ?", (project_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
 # UPDATE
 def update_name(table,id,new_name):
     conn = get_connection()

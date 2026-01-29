@@ -143,10 +143,23 @@ function renderTask(task, container, projectMap){
     const checkbox = createCheckbox(task)
 
     const label = document.createElement("span");
-    const projectName = projectMap && task.project_id ? projectMap[task.project_id] : null;
-    const projectLabel = projectName ? ` (${projectName})` : (task.project_id ? ` (Project #${task.project_id})` : "");
-    label.textContent = ` ${task.name}${projectLabel}`;
     label.style.marginLeft = "8px";
+    label.textContent = ` ${task.name}`;
+
+    const projectName = projectMap && task.project_id ? projectMap[task.project_id] : null;
+    if (task.project_id) {
+        const projectLink = document.createElement("a");
+        projectLink.href = "#";
+        projectLink.textContent = projectName ? ` (${projectName})` : ` (Project #${task.project_id})`;
+        projectLink.style.marginLeft = "4px";
+        projectLink.style.textDecoration = "none";
+        projectLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            showPage("Projects");
+            loadProjectContent(task.project_id);
+        });
+        label.appendChild(projectLink);
+    }
 
     const editIcon = createEditIcon(task)
     const assignIcon = task.status === "complete" ? null : createAssignIcon(task)
@@ -268,33 +281,31 @@ const pages = {
     "People": document.getElementById("peoplePage")
 };
 
-// Show the initial page (Tasks)
-pages["Tasks"].style.display = "block";
-if (menuButtons.length > 0) {
-    menuButtons[0].classList.add("active");
+function showPage(title) {
+    Object.values(pages).forEach(page => page.style.display = "none");
+    pages[title].style.display = "block";
+    menuButtons.forEach(btn => btn.classList.remove("active"));
+    menuButtons.forEach(btn => {
+        if (btn.getAttribute("title") === title) {
+            btn.classList.add("active");
+        }
+    });
+    if (title === "Projects") {
+        loadProjects();
+    }
+    if (title === "Knowledge Base") {
+        loadNodes();
+    }
 }
+
+showPage("Tasks");
 
 // Add click listeners to menu buttons
 menuButtons.forEach(button => {
     button.addEventListener("click", () => {
         const title = button.getAttribute("title");
 
-        // Hide all pages
-        Object.values(pages).forEach(page => page.style.display = "none");
-
-        // Show selected page
-        pages[title].style.display = "block";
-
-        // Optional: highlight active tab
-        menuButtons.forEach(btn => btn.classList.remove("active"));
-        button.classList.add("active");
-
-        if (title === "Projects") {
-            loadProjects();  // ⬅ Load when tab clicked
-        }
-        if (title === "Knowledge Base") {
-            loadNodes();  // ⬅ Load when Knowledge tab clicked
-        }
+        showPage(title);
     });
 });
 
@@ -304,11 +315,42 @@ function renderProject(project) {
 
     const link = document.createElement("a");
     link.textContent = project.name;
-    link.href = `/project/${project.id}`;  // 🔗 Link to the project page
+    link.href = "#";
     link.style.textDecoration = "none";
+    link.addEventListener("click", (event) => {
+        event.preventDefault();
+        loadProjectContent(project.id);
+    });
 
     li.appendChild(link);
     document.getElementById("projectList").appendChild(li);
+}
+
+function loadProjectContent(projectId) {
+    fetch(`/projects/${projectId}`)
+        .then(response => response.json())
+        .then(data => {
+            const listView = document.getElementById("projectListView");
+            const contentView = document.getElementById("projectContentView");
+            const title = document.getElementById("projectTitle");
+            const taskList = document.getElementById("projectTaskList");
+            title.textContent = data.project?.name || "Project";
+            taskList.innerHTML = "";
+            const tasks = (data.tasks || []).filter(task => task.status !== "complete");
+            if (tasks.length === 0) {
+                const empty = document.createElement("li");
+                empty.textContent = "No open tasks assigned yet.";
+                taskList.appendChild(empty);
+            } else {
+                tasks.forEach(task => {
+                    const item = document.createElement("li");
+                    item.textContent = task.name;
+                    taskList.appendChild(item);
+                });
+            }
+            listView.style.display = "none";
+            contentView.style.display = "block";
+        });
 }
 
 function loadProjects() {
@@ -318,6 +360,8 @@ function loadProjects() {
             const list = document.getElementById("projectList");
             list.innerHTML = "";
             data.projects.forEach(renderProject);
+            document.getElementById("projectListView").style.display = "block";
+            document.getElementById("projectContentView").style.display = "none";
         });
 }
 
@@ -379,6 +423,14 @@ if (knowledgeBackBtn) {
     knowledgeBackBtn.addEventListener("click", () => {
         document.getElementById("knowledgeListView").style.display = "block";
         document.getElementById("knowledgeContentView").style.display = "none";
+    });
+}
+
+const projectBackBtn = document.getElementById("projectBackBtn");
+if (projectBackBtn) {
+    projectBackBtn.addEventListener("click", () => {
+        document.getElementById("projectListView").style.display = "block";
+        document.getElementById("projectContentView").style.display = "none";
     });
 }
 

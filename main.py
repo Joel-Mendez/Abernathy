@@ -32,11 +32,21 @@ def projects_collection():
         return project.list_projects()
     return project.create_project()
 
-@app.route("/projects/<int:project_id>", methods=["PATCH", "DELETE"])
+@app.route("/projects/<int:project_id>", methods=["GET", "PATCH", "DELETE"])
 def project_detail(project_id):
+    if request.method == "GET":
+        return project.get_project(project_id)
     if request.method == "PATCH":
         return project.update_project(project_id)
     return project.delete_project(project_id)
+
+@app.route("/project/<int:project_id>")
+def project_page(project_id):
+    project_row = db.get_row("projects", project_id)
+    if not project_row:
+        return "Project not found", 404
+    tasks = db.get_tasks_by_project(project_id)
+    return render_template("project.html", project=project_row, tasks=tasks)
 
 ##### Knowledge Base Routes #################
 @app.route("/nodes", methods=["GET", "POST"])

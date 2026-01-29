@@ -59,7 +59,16 @@
          <!-- Projects Page -->
         <div id="projectsPage" class="pageSection" style="display: none;">
             <h1>Projects</h1>
-            <ul id="projectList"></ul>
+            <div id="projectListView">
+                <ul id="projectList"></ul>
+            </div>
+            <div id="projectContentView" style="display: none;">
+                <div id="projectHeader">
+                    <button id="projectBackBtn">Back</button>
+                </div>
+                <h2 id="projectTitle"></h2>
+                <ul id="projectTaskList"></ul>
+            </div>
 
             <button class="addBtn" id="addProjectBtn">+</button>
         </div>

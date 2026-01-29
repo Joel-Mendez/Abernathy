@@ -219,7 +219,8 @@ ul {
 }
 
 /* Knowledge Base */
-#knowledgeContentView {
+#knowledgeContentView,
+#projectContentView {
     padding: 12px;
     min-height: 200px;
     max-width: 720px;
@@ -229,7 +230,8 @@ ul {
     white-space: pre-wrap;
 }
 
-#knowledgeBackBtn {
+#knowledgeBackBtn,
+#projectBackBtn {
     font-family: inherit;
     font-size: 14px;
     margin-bottom: 12px;
@@ -245,23 +247,28 @@ ul {
     transition: background 0.2s ease, transform 0.2s ease;
 }
 
-#knowledgeBackBtn::before {
+#knowledgeBackBtn::before,
+#projectBackBtn::before {
     content: "<";
     font-size: 16px;
     line-height: 1;
 }
 
-#knowledgeBackBtn:hover {
+#knowledgeBackBtn:hover,
+#projectBackBtn:hover {
     background: #111;
     transform: translateX(-1px);
 }
 
+#projectHeader,
 #knowledgeHeader {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
 }
+
+
 
 #knowledgeBody.is-editing {
     min-height: 320px;

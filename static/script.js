@@ -296,6 +296,9 @@ function showPage(title) {
     if (title === "Knowledge Base") {
         loadNodes();
     }
+    if (title === "Progress") {
+        loadProgressLog();
+    }
 }
 
 showPage("Tasks");
@@ -363,6 +366,69 @@ function loadProjects() {
             document.getElementById("projectListView").style.display = "block";
             document.getElementById("projectContentView").style.display = "none";
         });
+}
+
+function loadProgressLog() {
+    fetch("/tasks")
+        .then(response => response.json())
+        .then(data => {
+            const log = document.getElementById("progressLog");
+            log.innerHTML = "";
+            const completed = (data.tasks || [])
+                .filter(task => task.status === "complete" && task.date_completed)
+                .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed));
+
+            if (completed.length === 0) {
+                const empty = document.createElement("li");
+                empty.textContent = "No completed tasks yet.";
+                log.appendChild(empty);
+                return;
+            }
+
+            const groups = {};
+            completed.forEach(task => {
+                const dateKey = formatDateHeading(new Date(task.date_completed));
+                if (!groups[dateKey]) {
+                    groups[dateKey] = [];
+                }
+                groups[dateKey].push(task);
+            });
+
+            Object.keys(groups).forEach(dateKey => {
+                const heading = document.createElement("li");
+                heading.textContent = dateKey;
+                heading.style.fontWeight = "700";
+                heading.style.marginTop = "10px";
+                log.appendChild(heading);
+
+                groups[dateKey].forEach(task => {
+                    const time = new Date(task.date_completed).toLocaleTimeString();
+                    const item = document.createElement("li");
+                    item.textContent = `(${time}) ${task.name}`;
+                    log.appendChild(item);
+                });
+            });
+        });
+}
+
+function formatDateHeading(date) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+    }).formatToParts(date);
+
+    const lookup = {};
+    parts.forEach(part => {
+        if (part.type !== "literal") {
+            lookup[part.type] = part.value;
+        }
+    });
+
+    const weekday = lookup.weekday ? `${lookup.weekday}.` : "";
+    const month = lookup.month ? `${lookup.month}.` : "";
+    return `${weekday} ${month} ${lookup.day}, ${lookup.year}`.replace(/\s+/g, " ").trim();
 }
 
 function renderNode(node) {

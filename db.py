@@ -33,9 +33,14 @@ def init_task_table(cursor):
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
             name TEXT NOT NULL,
             status TEXT DEFAULT 'not started',
-            date_completed TEXT
+            date_completed TEXT,
+            project_id INTEGER
         )
     """)
+    cursor.execute("PRAGMA table_info(tasks)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if "project_id" not in columns:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN project_id INTEGER")
 
 def init_project_table(cursor):
     cursor.execute("""

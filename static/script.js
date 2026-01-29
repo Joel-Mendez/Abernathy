@@ -51,7 +51,89 @@ function createTrashIcon(task) {
     return trashIcon;
 }
 
-function renderTask(task, container){
+let projectsCache = [];
+
+function createAssignIcon(task) {
+    const assignIcon = document.createElement("i");
+    assignIcon.className = "fas fa-folder";
+    assignIcon.title = "Assign to project";
+
+    assignIcon.addEventListener("click", () => {
+        if (!projectsCache || projectsCache.length === 0) {
+            alert("No projects available.");
+            return;
+        }
+        showProjectPicker(task.id);
+    });
+
+    return assignIcon;
+}
+
+function showProjectPicker(taskId) {
+    const existingOverlay = document.getElementById("projectPickerOverlay");
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    const overlay = document.createElement("div");
+    overlay.id = "projectPickerOverlay";
+    overlay.className = "project-picker-overlay";
+
+    const panel = document.createElement("div");
+    panel.className = "project-picker";
+
+    const title = document.createElement("div");
+    title.className = "project-picker-title";
+    title.textContent = "Assign to project";
+
+    const list = document.createElement("div");
+    list.className = "project-picker-list";
+
+    projectsCache.forEach(project => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "project-picker-item";
+        item.textContent = project.name;
+        item.addEventListener("click", () => {
+            fetch(`/tasks/${taskId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ project_id: project.id })
+            }).then(() => location.reload());
+        });
+        list.appendChild(item);
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "project-picker-actions";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "project-picker-cancel";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", () => overlay.remove());
+
+    actions.appendChild(cancelBtn);
+
+    panel.appendChild(title);
+    panel.appendChild(list);
+    panel.appendChild(actions);
+    overlay.appendChild(panel);
+
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+            overlay.remove();
+        }
+    });
+
+    document.body.appendChild(overlay);
+    const firstItem = panel.querySelector(".project-picker-item");
+    if (firstItem) {
+        firstItem.focus();
+    }
+}
+
+function renderTask(task, container, projectMap){
     const li = document.createElement("li");
     li.className = "task-item";
     li.style.display = "flex";
@@ -61,38 +143,49 @@ function renderTask(task, container){
     const checkbox = createCheckbox(task)
 
     const label = document.createElement("span");
-    label.textContent = ` ${task.name}`;
+    const projectName = projectMap && task.project_id ? projectMap[task.project_id] : null;
+    const projectLabel = projectName ? ` (${projectName})` : (task.project_id ? ` (Project #${task.project_id})` : "");
+    label.textContent = ` ${task.name}${projectLabel}`;
     label.style.marginLeft = "8px";
 
     const editIcon = createEditIcon(task)
+    const assignIcon = task.status === "complete" ? null : createAssignIcon(task)
     const trashIcon = createTrashIcon(task)
 
     li.appendChild(checkbox);
     li.appendChild(label);
     li.appendChild(editIcon);
+    if (assignIcon) {
+        li.appendChild(assignIcon);
+    }
     li.appendChild(trashIcon);
     container.appendChild(li);
 }
 
 // Main Functions
-fetch("/tasks")
-    .then(response => response.json())
-    .then(data => {
+    Promise.all([fetch("/tasks"), fetch("/projects")])
+    .then(([tasksResponse, projectsResponse]) => Promise.all([tasksResponse.json(), projectsResponse.json()]))
+    .then(([tasksData, projectsData]) => {
         const taskList = document.getElementById("taskList");
         const completedList = document.getElementById("completedList");
+        const projectMap = {};
+        projectsCache = projectsData.projects || [];
+        projectsCache.forEach(project => {
+            projectMap[project.id] = project.name;
+        });
 
         // Sort completed tasks by most recent
-        const sortedCompleted = data.tasks
+        const sortedCompleted = tasksData.tasks
             .filter(task => task.status === "complete")
             .sort((a, b) => new Date(b.date_completed || 0) - new Date(a.date_completed || 0));
 
-        const todoTasks = data.tasks.filter(task => task.status !== "complete");
+        const todoTasks = tasksData.tasks.filter(task => task.status !== "complete");
    
         // Render to-do tasks
-        todoTasks.forEach(task => renderTask(task, taskList));
+        todoTasks.forEach(task => renderTask(task, taskList, projectMap));
 
         // Render completed tasks (sorted)
-        sortedCompleted.forEach(task => renderTask(task, completedList));
+        sortedCompleted.forEach(task => renderTask(task, completedList, projectMap));
     });
 
 window.onload = () => {

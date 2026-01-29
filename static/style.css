@@ -33,6 +33,76 @@ ul {
     opacity: 1;
 }
 
+/* Project Picker */
+.project-picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.project-picker {
+    background: #fff;
+    padding: 16px;
+    border-radius: 10px;
+    min-width: 280px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.project-picker-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.project-picker-list {
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.project-picker-item {
+    width: 100%;
+    padding: 10px 12px;
+    text-align: left;
+    background: #fff;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.project-picker-item:hover,
+.project-picker-item:focus {
+    background: #f7f7f7;
+    outline: none;
+}
+
+.project-picker-item:last-child {
+    border-bottom: none;
+}
+
+.project-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.project-picker-cancel,
+.project-picker-assign {
+    font-family: inherit;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 999px;
+    border: 1px solid #000;
+    background: #fff;
+}
+
+
 /* Task View Toggle */
 #viewToggle {
     margin-top: 10px;

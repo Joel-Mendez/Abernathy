@@ -40,6 +40,9 @@ def update_task(task_id):
             datetime.now().isoformat() if status == "complete" else None
         )
 
+    if "project_id" in data:
+        updates["project_id"] = data["project_id"]
+
     if not updates:
         return jsonify({"message": "No valid fields provided"}), 400
 

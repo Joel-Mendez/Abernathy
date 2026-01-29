@@ -11,7 +11,7 @@ function createCheckbox(task) {
             body: JSON.stringify({
                 status: checkbox.checked ? "complete" : "not started"
             })
-        }).then(() => location.reload());
+        }).then(() => refreshCurrentView());
     });
 
     return checkbox;
@@ -29,7 +29,7 @@ function createEditIcon(task) {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: newName.trim() })
-            }).then(() => location.reload());
+            }).then(() => refreshCurrentView());
         }
     });
 
@@ -44,7 +44,7 @@ function createTrashIcon(task) {
     trashIcon.addEventListener("click", () => {
         if (confirm(`Delete "${task.name}"?`)) {
             fetch(`/tasks/${task.id}`, { method: "DELETE" })
-                .then(() => location.reload());
+                .then(() => refreshCurrentView());
         }
     });
 
@@ -171,7 +171,7 @@ function showProjectPicker(taskId) {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ project_id: project.id })
-            }).then(() => location.reload());
+            }).then(() => refreshCurrentView());
         });
         list.appendChild(item);
     });
@@ -252,75 +252,79 @@ function renderTask(task, container, projectMap){
 }
 
 // Main Functions
-Promise.all([fetch("/tasks"), fetch("/projects")])
-    .then(([tasksResponse, projectsResponse]) => Promise.all([tasksResponse.json(), projectsResponse.json()]))
-    .then(([tasksData, projectsData]) => {
-        const priorityList = document.getElementById("priorityList");
-        const taskProjectList = document.getElementById("taskProjectList");
-        const dueDateList = document.getElementById("dueDateList");
-        const projectMap = {};
-        projectsCache = projectsData.projects || [];
-        projectsCache.forEach(project => {
-            projectMap[project.id] = project.name;
+function loadTasksView() {
+    return Promise.all([fetch("/tasks"), fetch("/projects")])
+        .then(([tasksResponse, projectsResponse]) => Promise.all([tasksResponse.json(), projectsResponse.json()]))
+        .then(([tasksData, projectsData]) => {
+            const priorityList = document.getElementById("priorityList");
+            const taskProjectList = document.getElementById("taskProjectList");
+            const dueDateList = document.getElementById("dueDateList");
+            const projectMap = {};
+            projectsCache = projectsData.projects || [];
+            projectsCache.forEach(project => {
+                projectMap[project.id] = project.name;
+            });
+
+            const openTasks = (tasksData.tasks || []).filter(task => task.status !== "complete");
+
+            const byDueDate = [...openTasks].sort((a, b) => {
+                const aDate = a.due_date ? new Date(a.due_date) : null;
+                const bDate = b.due_date ? new Date(b.due_date) : null;
+                if (aDate && bDate) {
+                    return aDate - bDate;
+                }
+                if (aDate) return -1;
+                if (bDate) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            // Priority tab (due date order for now)
+            priorityList.innerHTML = "";
+            byDueDate.forEach(task => renderTask(task, priorityList, projectMap));
+
+            // Due Date tab (grouped by due date)
+            dueDateList.innerHTML = "";
+            const dueGroups = {};
+            byDueDate.forEach(task => {
+                const key = task.due_date ? formatDateHeading(new Date(task.due_date)) : "No due date";
+                if (!dueGroups[key]) {
+                    dueGroups[key] = [];
+                }
+                dueGroups[key].push(task);
+            });
+
+            Object.keys(dueGroups).forEach(dateKey => {
+                const heading = document.createElement("li");
+                heading.textContent = dateKey;
+                heading.style.fontWeight = "700";
+                heading.style.marginTop = "10px";
+                dueDateList.appendChild(heading);
+                dueGroups[dateKey].forEach(task => renderTask(task, dueDateList, projectMap));
+            });
+
+            // Project tab (grouped by project name, alphabetical)
+            taskProjectList.innerHTML = "";
+            const grouped = {};
+            openTasks.forEach(task => {
+                const name = task.project_id ? (projectMap[task.project_id] || `Project #${task.project_id}`) : "Unassigned";
+                if (!grouped[name]) {
+                    grouped[name] = [];
+                }
+                grouped[name].push(task);
+            });
+
+            Object.keys(grouped).sort((a, b) => a.localeCompare(b)).forEach(projectName => {
+                const heading = document.createElement("li");
+                heading.textContent = projectName;
+                heading.style.fontWeight = "700";
+                heading.style.marginTop = "10px";
+                taskProjectList.appendChild(heading);
+                grouped[projectName].forEach(task => renderTask(task, taskProjectList, projectMap));
+            });
         });
+}
 
-        const openTasks = (tasksData.tasks || []).filter(task => task.status !== "complete");
-
-        const byDueDate = [...openTasks].sort((a, b) => {
-            const aDate = a.due_date ? new Date(a.due_date) : null;
-            const bDate = b.due_date ? new Date(b.due_date) : null;
-            if (aDate && bDate) {
-                return aDate - bDate;
-            }
-            if (aDate) return -1;
-            if (bDate) return 1;
-            return a.name.localeCompare(b.name);
-        });
-
-        // Priority tab (due date order for now)
-        priorityList.innerHTML = "";
-        byDueDate.forEach(task => renderTask(task, priorityList, projectMap));
-
-        // Due Date tab (grouped by due date)
-        dueDateList.innerHTML = "";
-        const dueGroups = {};
-        byDueDate.forEach(task => {
-            const key = task.due_date ? formatDateHeading(new Date(task.due_date)) : "No due date";
-            if (!dueGroups[key]) {
-                dueGroups[key] = [];
-            }
-            dueGroups[key].push(task);
-        });
-
-        Object.keys(dueGroups).forEach(dateKey => {
-            const heading = document.createElement("li");
-            heading.textContent = dateKey;
-            heading.style.fontWeight = "700";
-            heading.style.marginTop = "10px";
-            dueDateList.appendChild(heading);
-            dueGroups[dateKey].forEach(task => renderTask(task, dueDateList, projectMap));
-        });
-
-        // Project tab (grouped by project name, alphabetical)
-        taskProjectList.innerHTML = "";
-        const grouped = {};
-        openTasks.forEach(task => {
-            const name = task.project_id ? (projectMap[task.project_id] || `Project #${task.project_id}`) : "Unassigned";
-            if (!grouped[name]) {
-                grouped[name] = [];
-            }
-            grouped[name].push(task);
-        });
-
-        Object.keys(grouped).sort((a, b) => a.localeCompare(b)).forEach(projectName => {
-            const heading = document.createElement("li");
-            heading.textContent = projectName;
-            heading.style.fontWeight = "700";
-            heading.style.marginTop = "10px";
-            taskProjectList.appendChild(heading);
-            grouped[projectName].forEach(task => renderTask(task, taskProjectList, projectMap));
-        });
-    });
+loadTasksView();
 
 window.onload = () => {
     const savedTab = localStorage.getItem("activeTaskTab");
@@ -368,11 +372,26 @@ if (task && task.trim() !== "") {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({ name: task.trim() })
-    }).then(() => location.reload());
+    }).then(() => refreshCurrentView());
 }
 });
 
 document.getElementById("addProjectBtn").addEventListener("click", function () {
+    const isProjectDetail = document.getElementById("projectContentView").style.display === "block";
+    if (isProjectDetail && activeProjectId) {
+        const task = prompt("What task would you like to add?");
+        if (task && task.trim() !== "") {
+            fetch("/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name: task.trim(), project_id: activeProjectId })
+            }).then(() => loadProjectContent(activeProjectId));
+        }
+        return;
+    }
+
     const project = prompt("What project would you like to add?");
     if (project && project.trim() !== "") {
         fetch("/projects", {
@@ -381,7 +400,7 @@ document.getElementById("addProjectBtn").addEventListener("click", function () {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ name: project.trim() })
-        }).then(() => location.reload());
+        }).then(() => loadProjects());
     }
     });
 
@@ -394,7 +413,7 @@ document.getElementById("addNodeBtn").addEventListener("click", function () {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ name: node.trim() })
-        }).then(() => location.reload());
+        }).then(() => refreshCurrentView());
     }
     });
 
@@ -420,6 +439,9 @@ function showPage(title) {
     });
     if (title === "Projects") {
         loadProjects();
+    }
+    if (title === "Tasks") {
+        loadTasksView();
     }
     if (title === "Knowledge Base") {
         loadNodes();
@@ -489,6 +511,7 @@ function loadProjectContent(projectId) {
             }
             listView.style.display = "none";
             contentView.style.display = "block";
+            activeProjectId = data.project?.id || projectId;
         });
 }
 
@@ -502,6 +525,50 @@ function loadProjects() {
             document.getElementById("projectListView").style.display = "block";
             document.getElementById("projectContentView").style.display = "none";
         });
+}
+
+function refreshCurrentView() {
+    const tasksPage = document.getElementById("tasksPage");
+    const projectsPage = document.getElementById("projectsPage");
+    const knowledgePage = document.getElementById("knowledgePage");
+    const progressPage = document.getElementById("progressPage");
+    const calendarPage = document.getElementById("calendarPage");
+
+    const isVisible = (el) => el && getComputedStyle(el).display !== "none";
+
+    if (isVisible(tasksPage)) {
+        loadTasksView();
+        return;
+    }
+
+    if (isVisible(projectsPage)) {
+        const contentView = document.getElementById("projectContentView");
+        if (isVisible(contentView) && activeProjectId) {
+            loadProjectContent(activeProjectId);
+        } else {
+            loadProjects();
+        }
+        return;
+    }
+
+    if (isVisible(knowledgePage)) {
+        const contentView = document.getElementById("knowledgeContentView");
+        if (isVisible(contentView) && activeNodeId) {
+            loadNodeContent(activeNodeId);
+        } else {
+            loadNodes();
+        }
+        return;
+    }
+
+    if (isVisible(progressPage)) {
+        loadProgressLog();
+        return;
+    }
+
+    if (isVisible(calendarPage)) {
+        loadCalendarLog();
+    }
 }
 
 function loadProgressLog() {
@@ -553,20 +620,33 @@ function loadCalendarLog() {
         .then(data => {
             const log = document.getElementById("calendarLog");
             log.innerHTML = "";
-            const withDueDates = (data.tasks || [])
-                .filter(task => task.due_date)
-                .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+            const openTasks = (data.tasks || []).filter(task => task.status !== "complete");
+            const projectMap = {};
+            (projectsCache || []).forEach(project => {
+                projectMap[project.id] = project.name;
+            });
 
-            if (withDueDates.length === 0) {
+            if (openTasks.length === 0) {
                 const empty = document.createElement("li");
-                empty.textContent = "No due dates set yet.";
+                empty.textContent = "No open tasks yet.";
                 log.appendChild(empty);
                 return;
             }
 
+            const byDueDate = [...openTasks].sort((a, b) => {
+                const aDate = a.due_date ? new Date(a.due_date) : null;
+                const bDate = b.due_date ? new Date(b.due_date) : null;
+                if (aDate && bDate) {
+                    return aDate - bDate;
+                }
+                if (aDate) return -1;
+                if (bDate) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
             const groups = {};
-            withDueDates.forEach(task => {
-                const dateKey = formatDateHeading(new Date(task.due_date));
+            byDueDate.forEach(task => {
+                const dateKey = task.due_date ? formatDateHeading(new Date(task.due_date)) : "No due date";
                 if (!groups[dateKey]) {
                     groups[dateKey] = [];
                 }
@@ -580,11 +660,7 @@ function loadCalendarLog() {
                 heading.style.marginTop = "10px";
                 log.appendChild(heading);
 
-                groups[dateKey].forEach(task => {
-                    const item = document.createElement("li");
-                    item.textContent = task.name;
-                    log.appendChild(item);
-                });
+                groups[dateKey].forEach(task => renderTask(task, log, projectMap));
             });
         });
 }
@@ -625,7 +701,7 @@ function showDueDatePicker(task) {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ due_date: null })
-        }).then(() => location.reload());
+        }).then(() => refreshCurrentView());
     });
 
     const cancelBtn = document.createElement("button");
@@ -646,7 +722,7 @@ function showDueDatePicker(task) {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ due_date: input.value })
-        }).then(() => location.reload());
+        }).then(() => refreshCurrentView());
     });
 
     actions.appendChild(clearBtn);
@@ -712,6 +788,7 @@ function renderNode(node) {
 let activeNodeId = null;
 let activeNodeContent = "";
 let saveTimer = null;
+let activeProjectId = null;
 
 function loadNodeContent(nodeId) {
     fetch(`/nodes/${nodeId}`)

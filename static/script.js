@@ -252,58 +252,110 @@ function renderTask(task, container, projectMap){
 }
 
 // Main Functions
-    Promise.all([fetch("/tasks"), fetch("/projects")])
+Promise.all([fetch("/tasks"), fetch("/projects")])
     .then(([tasksResponse, projectsResponse]) => Promise.all([tasksResponse.json(), projectsResponse.json()]))
     .then(([tasksData, projectsData]) => {
-        const taskList = document.getElementById("taskList");
-        const completedList = document.getElementById("completedList");
+        const priorityList = document.getElementById("priorityList");
+        const taskProjectList = document.getElementById("taskProjectList");
+        const dueDateList = document.getElementById("dueDateList");
         const projectMap = {};
         projectsCache = projectsData.projects || [];
         projectsCache.forEach(project => {
             projectMap[project.id] = project.name;
         });
 
-        // Sort completed tasks by most recent
-        const sortedCompleted = tasksData.tasks
-            .filter(task => task.status === "complete")
-            .sort((a, b) => new Date(b.date_completed || 0) - new Date(a.date_completed || 0));
+        const openTasks = (tasksData.tasks || []).filter(task => task.status !== "complete");
 
-        const todoTasks = tasksData.tasks.filter(task => task.status !== "complete");
-   
-        // Render to-do tasks
-        todoTasks.forEach(task => renderTask(task, taskList, projectMap));
+        const byDueDate = [...openTasks].sort((a, b) => {
+            const aDate = a.due_date ? new Date(a.due_date) : null;
+            const bDate = b.due_date ? new Date(b.due_date) : null;
+            if (aDate && bDate) {
+                return aDate - bDate;
+            }
+            if (aDate) return -1;
+            if (bDate) return 1;
+            return a.name.localeCompare(b.name);
+        });
 
-        // Render completed tasks (sorted)
-        sortedCompleted.forEach(task => renderTask(task, completedList, projectMap));
+        // Priority tab (due date order for now)
+        priorityList.innerHTML = "";
+        byDueDate.forEach(task => renderTask(task, priorityList, projectMap));
+
+        // Due Date tab (grouped by due date)
+        dueDateList.innerHTML = "";
+        const dueGroups = {};
+        byDueDate.forEach(task => {
+            const key = task.due_date ? formatDateHeading(new Date(task.due_date)) : "No due date";
+            if (!dueGroups[key]) {
+                dueGroups[key] = [];
+            }
+            dueGroups[key].push(task);
+        });
+
+        Object.keys(dueGroups).forEach(dateKey => {
+            const heading = document.createElement("li");
+            heading.textContent = dateKey;
+            heading.style.fontWeight = "700";
+            heading.style.marginTop = "10px";
+            dueDateList.appendChild(heading);
+            dueGroups[dateKey].forEach(task => renderTask(task, dueDateList, projectMap));
+        });
+
+        // Project tab (grouped by project name, alphabetical)
+        taskProjectList.innerHTML = "";
+        const grouped = {};
+        openTasks.forEach(task => {
+            const name = task.project_id ? (projectMap[task.project_id] || `Project #${task.project_id}`) : "Unassigned";
+            if (!grouped[name]) {
+                grouped[name] = [];
+            }
+            grouped[name].push(task);
+        });
+
+        Object.keys(grouped).sort((a, b) => a.localeCompare(b)).forEach(projectName => {
+            const heading = document.createElement("li");
+            heading.textContent = projectName;
+            heading.style.fontWeight = "700";
+            heading.style.marginTop = "10px";
+            taskProjectList.appendChild(heading);
+            grouped[projectName].forEach(task => renderTask(task, taskProjectList, projectMap));
+        });
     });
 
 window.onload = () => {
-    const savedTab = localStorage.getItem("activeTab");
-    if (savedTab === "completed") {
-        document.getElementById("completedBtn").click();
+    const savedTab = localStorage.getItem("activeTaskTab");
+    if (savedTab === "project") {
+        document.getElementById("projectBtn").click();
+    } else if (savedTab === "dueDate") {
+        document.getElementById("dueDateBtn").click();
     } else {
-        document.getElementById("todoBtn").click(); // fallback default
+        document.getElementById("priorityBtn").click();
     }
 };
 
 
 // UI Actions
-document.getElementById("todoBtn").addEventListener("click", () => {
-    localStorage.setItem("activeTab", "todo");
-    document.getElementById("taskList").style.display = "block";
-    document.getElementById("completedList").style.display = "none";
-    document.getElementById("todoBtn").classList.add("active");
-    document.getElementById("completedBtn").classList.remove("active");
+function showTaskTab(tab) {
+    document.getElementById("priorityList").style.display = tab === "priority" ? "block" : "none";
+    document.getElementById("taskProjectList").style.display = tab === "project" ? "block" : "none";
+    document.getElementById("dueDateList").style.display = tab === "dueDate" ? "block" : "none";
+    document.getElementById("priorityBtn").classList.toggle("active", tab === "priority");
+    document.getElementById("projectBtn").classList.toggle("active", tab === "project");
+    document.getElementById("dueDateBtn").classList.toggle("active", tab === "dueDate");
+    localStorage.setItem("activeTaskTab", tab);
     document.getElementById("addTaskBtn").style.display = "block";
+}
+
+document.getElementById("priorityBtn").addEventListener("click", () => {
+    showTaskTab("priority");
 });
 
-document.getElementById("completedBtn").addEventListener("click", () => {
-    localStorage.setItem("activeTab", "completed");
-    document.getElementById("taskList").style.display = "none";
-    document.getElementById("completedList").style.display = "block";
-    document.getElementById("completedBtn").classList.add("active");
-    document.getElementById("todoBtn").classList.remove("active");
-    document.getElementById("addTaskBtn").style.display = "none";
+document.getElementById("projectBtn").addEventListener("click", () => {
+    showTaskTab("project");
+});
+
+document.getElementById("dueDateBtn").addEventListener("click", () => {
+    showTaskTab("dueDate");
 });
 
 // Add Task Button
@@ -424,16 +476,16 @@ function loadProjectContent(projectId) {
             title.textContent = data.project?.name || "Project";
             taskList.innerHTML = "";
             const tasks = (data.tasks || []).filter(task => task.status !== "complete");
+            const projectMap = {};
+            (projectsCache || []).forEach(project => {
+                projectMap[project.id] = project.name;
+            });
             if (tasks.length === 0) {
                 const empty = document.createElement("li");
                 empty.textContent = "No open tasks assigned yet.";
                 taskList.appendChild(empty);
             } else {
-                tasks.forEach(task => {
-                    const item = document.createElement("li");
-                    item.textContent = task.name;
-                    taskList.appendChild(item);
-                });
+                tasks.forEach(task => renderTask(task, taskList, projectMap));
             }
             listView.style.display = "none";
             contentView.style.display = "block";

@@ -5,11 +5,22 @@
     </head>
     <body> 
         <h1> Tasks </h1>
-        <input type = "text" placeholder = "Task name ...">
-        <button type = "button" onclick = sendInput()> Send </button> 
+        <input type = "text" id = "input" placeholder = "Task name ...">
+        <button type = "button" onclick = "sendInput()"> Send </button>
+        <p>Result: <span id="result"></span></p>
         <script>
             function sendInput(){
-                console.log("Hello, world!");
+                // Retrieve the User's Input
+                const user_input = document.getElementById("input").value
+
+                // Send User Input as a String to back-end
+                fetch("/reverse",{
+                    method:"POST",
+                    headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({message:user_input})
+                })
+                .then(response => response.json()) // when response arrives, parse JSON
+                .then(data => document.getElementById("result").textContent = data.reversed)
             }
         </script>
     </body>

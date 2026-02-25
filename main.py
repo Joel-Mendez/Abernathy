@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, jsonify
-
+import tasks
 
 app = Flask(__name__)
 
 @app.route('/') 
 def home():
+    tasks.init_db()
     return render_template('index.html')
 
 @app.route('/reverse', methods=['POST'])

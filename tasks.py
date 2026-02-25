@@ -21,8 +21,3 @@ def init_db():
     
     conn.commit()
     conn.close()
-
-# What is sqlite3? 
-# initializing a table 
-# typical steps in creating/ working with a db (conn/cursor)
-# row factory to access columns by name

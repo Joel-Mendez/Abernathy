@@ -14,13 +14,13 @@
                 const user_input = document.getElementById("input").value
 
                 // Send User Input as a String to back-end
-                fetch("/reverse",{
+                fetch("/create-task",{
                     method:"POST",
                     headers: {"Content-Type":"application/json"},
                     body: JSON.stringify({message:user_input})
                 })
                 .then(response => response.json()) // when response arrives, parse JSON
-                .then(data => document.getElementById("result").textContent = data.reversed)
+                .then(data => document.getElementById("result").textContent = "Task created: " + data.name + " (id: " + data.id + ")")
             }
         </script>
     </body>

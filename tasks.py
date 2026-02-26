@@ -21,3 +21,12 @@ def init_db():
     
     conn.commit()
     conn.close()
+
+def create_task(name):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO tasks (name) VALUES (?)', (name,))
+    conn.commit()
+    task_id = cursor.lastrowid
+    conn.close()
+    return task_id

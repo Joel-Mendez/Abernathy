@@ -8,12 +8,12 @@ def home():
     tasks.init_db()
     return render_template('index.html')
 
-@app.route('/reverse', methods=['POST'])
-def reverse():
+@app.route('/create-task', methods=['POST'])
+def create_task():
     data = request.get_json()
-    user_input = data.get("message","")
-    user_input = user_input[::-1]
-    return jsonify({"reversed":user_input})
+    name = data.get("message", "")
+    task_id = tasks.create_task(name)
+    return jsonify({"id": task_id, "name": name})
 
 if __name__ == '__main__':
     app.run(debug=True) 

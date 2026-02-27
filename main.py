@@ -8,6 +8,10 @@ def home():
     tasks.init_db()
     return render_template('index.html')
 
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    return jsonify(tasks.get_tasks())
+
 @app.route('/create-task', methods=['POST'])
 def create_task():
     data = request.get_json()

@@ -7,8 +7,22 @@
         <h1> Tasks </h1>
         <input type = "text" id = "input" placeholder = "Task name ...">
         <button type = "button" onclick = "sendInput()"> Send </button>
-        <p>Result: <span id="result"></span></p>
+        <ul id="task-list"></ul>
         <script>
+            function loadTasks(){
+                fetch("/tasks")
+                .then(response => response.json())
+                .then(tasks => {
+                    const list = document.getElementById("task-list")
+                    list.innerHTML = ""  // clear the list before re-rendering
+                    tasks.forEach(task => {
+                        const item = document.createElement("li")
+                        item.textContent = task.name
+                        list.appendChild(item)
+                    })
+                })
+            }
+
             function sendInput(){
                 // Retrieve the User's Input
                 const user_input = document.getElementById("input").value
@@ -19,9 +33,14 @@
                     headers: {"Content-Type":"application/json"},
                     body: JSON.stringify({message:user_input})
                 })
-                .then(response => response.json()) // when response arrives, parse JSON
-                .then(data => document.getElementById("result").textContent = "Task created: " + data.name + " (id: " + data.id + ")")
+                .then(response => response.json())
+                .then(() => {
+                    document.getElementById("input").value = ""  // clear the text box
+                    loadTasks()  // refresh the list
+                })
             }
+
+            loadTasks()  // load existing tasks when the page first opens
         </script>
     </body>
 </html>

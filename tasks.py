@@ -30,3 +30,11 @@ def create_task(name):
     task_id = cursor.lastrowid
     conn.close()
     return task_id
+
+def get_tasks():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name FROM tasks')
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]

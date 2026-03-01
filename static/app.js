@@ -6,11 +6,39 @@ function loadTasks(){
         list.innerHTML = ""  // clear the list before re-rendering
         tasks.forEach(task => {
             const item = document.createElement("li")
-            item.textContent = task.name + " "
 
-            const btn = document.createElement("button")
-            btn.textContent = "Delete"
-            btn.addEventListener("click", () => {
+            // Use a span for the name so it can be swapped with an input on edit
+            const nameSpan = document.createElement("span")
+            nameSpan.textContent = task.name + " "
+            item.appendChild(nameSpan)
+
+            const editBtn = document.createElement("button")
+            editBtn.textContent = "Edit"
+            editBtn.addEventListener("click", () => {
+                if (editBtn.textContent === "Edit") {
+                    // Switch to edit mode: replace span with a text input
+                    const input = document.createElement("input")
+                    input.type = "text"
+                    input.value = nameSpan.textContent.trim()
+                    item.replaceChild(input, nameSpan)
+                    editBtn.textContent = "Save"
+                } else {
+                    // Save mode: send updated name to backend
+                    const input = item.querySelector("input")
+                    fetch("/update-task", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({id: task.id, name: input.value})
+                    })
+                    .then(response => response.json())
+                    .then(() => loadTasks())  // refresh the list after saving
+                }
+            })
+            item.appendChild(editBtn)
+
+            const deleteBtn = document.createElement("button")
+            deleteBtn.textContent = "Delete"
+            deleteBtn.addEventListener("click", () => {
                 fetch("/delete-task", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
@@ -19,7 +47,8 @@ function loadTasks(){
                 .then(response => response.json())
                 .then(() => loadTasks())  // refresh the list after deletion
             })
-            item.appendChild(btn)
+            item.appendChild(deleteBtn)
+
             list.appendChild(item)
         })
     })

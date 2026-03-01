@@ -45,3 +45,10 @@ def delete_task(task_id):
     cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
     conn.commit()
     conn.close()
+
+def update_task(task_id, name):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tasks SET name = ? WHERE id = ?', (name, task_id))
+    conn.commit()
+    conn.close()

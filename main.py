@@ -25,5 +25,11 @@ def delete_task():
     task.delete_task(data.get("id"))
     return jsonify({"ok": True})
 
+@app.route('/update-task', methods=['POST'])
+def update_task():
+    data = request.get_json()
+    task.update_task(data.get("id"), data.get("name"))
+    return jsonify({"ok": True})
+
 if __name__ == '__main__':
     app.run(debug=True)

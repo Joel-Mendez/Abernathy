@@ -1,0 +1,45 @@
+function loadTasks(){
+    fetch("/tasks")
+    .then(response => response.json())
+    .then(tasks => {
+        const list = document.getElementById("task-list")
+        list.innerHTML = ""  // clear the list before re-rendering
+        tasks.forEach(task => {
+            const item = document.createElement("li")
+            item.textContent = task.name + " "
+
+            const btn = document.createElement("button")
+            btn.textContent = "Delete"
+            btn.addEventListener("click", () => {
+                fetch("/delete-task", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id})
+                })
+                .then(response => response.json())
+                .then(() => loadTasks())  // refresh the list after deletion
+            })
+            item.appendChild(btn)
+            list.appendChild(item)
+        })
+    })
+}
+
+function sendInput(){
+    // Retrieve the User's Input
+    const user_input = document.getElementById("input").value
+
+    // Send User Input as a String to back-end
+    fetch("/create-task",{
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({message:user_input})
+    })
+    .then(response => response.json())
+    .then(() => {
+        document.getElementById("input").value = ""  // clear the text box
+        loadTasks()  // refresh the list
+    })
+}
+
+loadTasks()  // load existing tasks when the page first opens

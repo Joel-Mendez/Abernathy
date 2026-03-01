@@ -38,3 +38,10 @@ def get_tasks():
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def delete_task(task_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
+    conn.commit()
+    conn.close()

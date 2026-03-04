@@ -37,5 +37,11 @@ def update_status():
     task.update_task_status(data.get("id"), data.get("status"))
     return jsonify({"ok": True})
 
+@app.route('/update-priority', methods=['POST'])
+def update_priority():
+    data = request.get_json()
+    task.update_task_priority(data.get("id"), data.get("priority"))
+    return jsonify({"ok": True})
+
 if __name__ == '__main__':
     app.run(debug=True)

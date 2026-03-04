@@ -69,6 +69,31 @@ function loadTasks(){
             })
             item.appendChild(select)
 
+            const prioritySelect = document.createElement("select")
+            const priorities = [
+                [1, "1 — Minimal"],
+                [2, "2 — Routine"],
+                [3, "3 — Important"],
+                [4, "4 — Urgent"],
+                [5, "5 — Critical"]
+            ]
+            priorities.forEach(([val, label]) => {
+                const opt = document.createElement("option")
+                opt.value = val
+                opt.textContent = label
+                if (val === task.priority) opt.selected = true
+                prioritySelect.appendChild(opt)
+            })
+            prioritySelect.addEventListener("change", () => {
+                fetch("/update-priority", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id, priority: parseInt(prioritySelect.value)})
+                })
+                .then(response => response.json())
+            })
+            item.appendChild(prioritySelect)
+
             const editBtn = document.createElement("button")
             editBtn.textContent = "Edit"
             editBtn.addEventListener("click", () => {

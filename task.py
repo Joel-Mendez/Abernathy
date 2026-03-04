@@ -17,7 +17,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'To-Do',
-            date_completed TEXT
+            date_completed TEXT,
+            priority INTEGER NOT NULL DEFAULT 3
         )
      ''')
 
@@ -31,6 +32,13 @@ def init_db():
     # Migration: add date_completed column if this db was created before it existed
     try:
         cursor.execute("ALTER TABLE tasks ADD COLUMN date_completed TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
+    # Migration: add priority column if this db was created before it existed
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 3")
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
@@ -50,7 +58,7 @@ def create_task(name):
 def get_tasks():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, status, date_completed FROM tasks')
+    cursor.execute('SELECT id, name, status, date_completed, priority FROM tasks')
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -66,6 +74,13 @@ def update_task(task_id, name):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET name = ? WHERE id = ?', (name, task_id))
+    conn.commit()
+    conn.close()
+
+def update_task_priority(task_id, priority):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tasks SET priority = ? WHERE id = ?', (priority, task_id))
     conn.commit()
     conn.close()
 

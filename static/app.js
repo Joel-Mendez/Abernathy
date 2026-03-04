@@ -7,6 +7,21 @@ function loadTasks(){
         tasks.forEach(task => {
             const item = document.createElement("li")
 
+            // Checkbox: checked when status is Completed, unchecked otherwise
+            const checkbox = document.createElement("input")
+            checkbox.type = "checkbox"
+            checkbox.checked = task.status === "Completed"
+            checkbox.addEventListener("change", () => {
+                const newStatus = checkbox.checked ? "Completed" : "To-Do"
+                select.value = newStatus  // keep dropdown in sync
+                fetch("/update-status", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id, status: newStatus})
+                })
+            })
+            item.appendChild(checkbox)
+
             // Use a span for the name so it can be swapped with an input on edit
             const nameSpan = document.createElement("span")
             nameSpan.textContent = task.name + " "
@@ -22,6 +37,7 @@ function loadTasks(){
                 select.appendChild(opt)
             })
             select.addEventListener("change", () => {
+                checkbox.checked = select.value === "Completed"  // keep checkbox in sync
                 fetch("/update-status", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
@@ -42,7 +58,7 @@ function loadTasks(){
                     editBtn.textContent = "Save"
                 } else {
                     // Save mode: send updated name to backend
-                    const input = item.querySelector("input")
+                    const input = item.querySelector("input[type='text']")  // must specify type to avoid matching the checkbox
                     fetch("/update-task", {
                         method: "POST",
                         headers: {"Content-Type": "application/json"},

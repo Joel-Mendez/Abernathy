@@ -1,3 +1,41 @@
+body {
+    margin: 0;
+}
+
+#layout {
+    display: flex;
+    height: 100vh;
+}
+
+#sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 130px;
+    padding: 16px 8px;
+    border-right: 1px solid #ccc;
+}
+
+#sidebar button {
+    padding: 10px 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+}
+
+#sidebar button.active {
+    font-weight: bold;
+    border-left: 3px solid black;
+}
+
+#content {
+    padding: 16px;
+    flex: 1;
+}
+
 #task-list {
     list-style: none;
     padding-left: 0;

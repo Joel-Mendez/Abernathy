@@ -1,14 +1,24 @@
 <!DOCTYPE html>
-<html> 
+<html>
     <head>
         <title> Abernathy </title>
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
-    <body> 
-        <h1> Tasks </h1>
-        <input type = "text" id = "input" placeholder = "Task name ...">
-        <button type = "button" onclick = "sendInput()"> Send </button>
-        <ul id="task-list"></ul>
+    <body>
+        <div id="layout">
+            <div id="sidebar">
+                <button id="tab-tasks" class="active" onclick="switchTab('tasks')">Tasks</button>
+                <button id="tab-progress" onclick="switchTab('progress')">Progress</button>
+            </div>
+            <div id="content">
+                <h1 id="tab-title">Tasks</h1>
+                <div id="add-task">
+                    <input type="text" id="input" placeholder="Task name ...">
+                    <button type="button" onclick="sendInput()">Send</button>
+                </div>
+                <ul id="task-list"></ul>
+            </div>
+        </div>
         <script src="{{ url_for('static', filename='app.js') }}"></script>
     </body>
 </html>

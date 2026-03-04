@@ -1,7 +1,17 @@
+let currentTab = 'tasks'  // tracks which tab is active
+
 function loadTasks(){
     fetch("/tasks")
     .then(response => response.json())
-    .then(tasks => {
+    .then(allTasks => {
+        // Filter tasks based on active tab
+        const tasks = currentTab === 'tasks'
+            ? allTasks.filter(t => t.status !== 'Completed')
+            : allTasks.filter(t => t.status === 'Completed')
+
+        // Only show the add-task input on the Tasks tab
+        document.getElementById("add-task").style.display = currentTab === 'tasks' ? "" : "none"
+
         const list = document.getElementById("task-list")
         list.innerHTML = ""  // clear the list before re-rendering
         tasks.forEach(task => {
@@ -19,6 +29,8 @@ function loadTasks(){
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({id: task.id, status: newStatus})
                 })
+                .then(response => response.json())
+                .then(() => loadTasks())  // refresh so task moves to correct tab
             })
             item.appendChild(checkbox)
 
@@ -43,6 +55,8 @@ function loadTasks(){
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({id: task.id, status: select.value})
                 })
+                .then(response => response.json())
+                .then(() => loadTasks())  // refresh so task moves to correct tab
             })
             item.appendChild(select)
 
@@ -86,6 +100,15 @@ function loadTasks(){
             list.appendChild(item)
         })
     })
+}
+
+function switchTab(tab) {
+    currentTab = tab
+    // Update active styling: toggle adds the class if true, removes it if false
+    document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
+    document.getElementById("tab-progress").classList.toggle("active", tab === 'progress')
+    document.getElementById("tab-title").textContent = tab === 'tasks' ? "Tasks" : "Progress"
+    loadTasks()
 }
 
 function sendInput(){

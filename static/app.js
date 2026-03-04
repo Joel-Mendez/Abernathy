@@ -94,6 +94,19 @@ function loadTasks(){
             })
             item.appendChild(prioritySelect)
 
+            const dueDateInput = document.createElement("input")
+            dueDateInput.type = "date"
+            dueDateInput.value = task.due_date || ""  // pre-fill if set, else empty
+            dueDateInput.addEventListener("change", () => {
+                fetch("/update-due-date", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id, due_date: dueDateInput.value || null})
+                })
+                .then(response => response.json())
+            })
+            item.appendChild(dueDateInput)
+
             const editBtn = document.createElement("button")
             editBtn.textContent = "Edit"
             editBtn.addEventListener("click", () => {

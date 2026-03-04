@@ -37,6 +37,12 @@ def update_status():
     task.update_task_status(data.get("id"), data.get("status"))
     return jsonify({"ok": True})
 
+@app.route('/update-due-date', methods=['POST'])
+def update_due_date():
+    data = request.get_json()
+    task.update_task_due_date(data.get("id"), data.get("due_date"))
+    return jsonify({"ok": True})
+
 @app.route('/update-priority', methods=['POST'])
 def update_priority():
     data = request.get_json()

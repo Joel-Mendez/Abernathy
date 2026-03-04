@@ -18,7 +18,8 @@ def init_db():
             name TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'To-Do',
             date_completed TEXT,
-            priority INTEGER NOT NULL DEFAULT 3
+            priority INTEGER NOT NULL DEFAULT 3,
+            due_date TEXT
         )
      ''')
 
@@ -43,6 +44,13 @@ def init_db():
     except sqlite3.OperationalError:
         pass  # column already exists
 
+    # Migration: add due_date column if this db was created before it existed
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN due_date TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
     conn.commit()
     conn.close()
 
@@ -58,7 +66,7 @@ def create_task(name):
 def get_tasks():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, status, date_completed, priority FROM tasks')
+    cursor.execute('SELECT id, name, status, date_completed, priority, due_date FROM tasks')
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -74,6 +82,13 @@ def update_task(task_id, name):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET name = ? WHERE id = ?', (name, task_id))
+    conn.commit()
+    conn.close()
+
+def update_task_due_date(task_id, due_date):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tasks SET due_date = ? WHERE id = ?', (due_date, task_id))
     conn.commit()
     conn.close()
 

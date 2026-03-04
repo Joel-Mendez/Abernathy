@@ -16,13 +16,21 @@ def init_db():
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'To-Do'
+            status TEXT NOT NULL DEFAULT 'To-Do',
+            date_completed TEXT
         )
      ''')
 
     # Migration: add the status column if this db was created before it existed
     try:
         cursor.execute("ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'To-Do'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
+    # Migration: add date_completed column if this db was created before it existed
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN date_completed TEXT")
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
@@ -42,7 +50,7 @@ def create_task(name):
 def get_tasks():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, status FROM tasks')
+    cursor.execute('SELECT id, name, status, date_completed FROM tasks')
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -64,6 +72,15 @@ def update_task(task_id, name):
 def update_task_status(task_id, status):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('UPDATE tasks SET status = ? WHERE id = ?', (status, task_id))
+    if status == 'Completed':
+        cursor.execute(
+            'UPDATE tasks SET status = ?, date_completed = datetime("now", "localtime") WHERE id = ?',
+            (status, task_id)
+        )
+    else:
+        cursor.execute(
+            'UPDATE tasks SET status = ?, date_completed = NULL WHERE id = ?',
+            (status, task_id)
+        )
     conn.commit()
     conn.close()

@@ -4,10 +4,12 @@ function loadTasks(){
     fetch("/tasks")
     .then(response => response.json())
     .then(allTasks => {
-        // Filter tasks based on active tab
+        // Filter tasks based on active tab; Progress tab sorted newest completion first
         const tasks = currentTab === 'tasks'
             ? allTasks.filter(t => t.status !== 'Completed')
-            : allTasks.filter(t => t.status === 'Completed')
+            : allTasks
+                .filter(t => t.status === 'Completed')
+                .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed))
 
         // Only show the add-task input on the Tasks tab
         document.getElementById("add-task").style.display = currentTab === 'tasks' ? "" : "none"
@@ -38,6 +40,13 @@ function loadTasks(){
             const nameSpan = document.createElement("span")
             nameSpan.textContent = task.name + " "
             item.appendChild(nameSpan)
+
+            // Show completion date on the Progress tab
+            if (currentTab === 'progress' && task.date_completed) {
+                const dateSpan = document.createElement("span")
+                dateSpan.textContent = "— completed " + task.date_completed + " "
+                item.appendChild(dateSpan)
+            }
 
             const select = document.createElement("select")
             const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]

@@ -10,15 +10,23 @@ def get_connection():
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     # Create a table for tasks
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL
+            name TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'To-Do'
         )
      ''')
-    
+
+    # Migration: add the status column if this db was created before it existed
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'To-Do'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
     conn.commit()
     conn.close()
 
@@ -34,7 +42,7 @@ def create_task(name):
 def get_tasks():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name FROM tasks')
+    cursor.execute('SELECT id, name, status FROM tasks')
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -50,5 +58,12 @@ def update_task(task_id, name):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET name = ? WHERE id = ?', (name, task_id))
+    conn.commit()
+    conn.close()
+
+def update_task_status(task_id, status):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tasks SET status = ? WHERE id = ?', (status, task_id))
     conn.commit()
     conn.close()

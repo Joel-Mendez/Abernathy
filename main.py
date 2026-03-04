@@ -31,5 +31,11 @@ def update_task():
     task.update_task(data.get("id"), data.get("name"))
     return jsonify({"ok": True})
 
+@app.route('/update-status', methods=['POST'])
+def update_status():
+    data = request.get_json()
+    task.update_task_status(data.get("id"), data.get("status"))
+    return jsonify({"ok": True})
+
 if __name__ == '__main__':
     app.run(debug=True)

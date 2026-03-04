@@ -12,6 +12,24 @@ function loadTasks(){
             nameSpan.textContent = task.name + " "
             item.appendChild(nameSpan)
 
+            const select = document.createElement("select")
+            const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]
+            statuses.forEach(s => {
+                const opt = document.createElement("option")
+                opt.value = s
+                opt.textContent = s
+                if (s === task.status) opt.selected = true
+                select.appendChild(opt)
+            })
+            select.addEventListener("change", () => {
+                fetch("/update-status", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id, status: select.value})
+                })
+            })
+            item.appendChild(select)
+
             const editBtn = document.createElement("button")
             editBtn.textContent = "Edit"
             editBtn.addEventListener("click", () => {

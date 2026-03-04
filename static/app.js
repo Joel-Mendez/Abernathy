@@ -108,15 +108,15 @@ function loadTasks(){
             item.appendChild(dueDateInput)
 
             const editBtn = document.createElement("button")
-            editBtn.textContent = "Edit"
+            editBtn.textContent = "✏️"
             editBtn.addEventListener("click", () => {
-                if (editBtn.textContent === "Edit") {
+                if (editBtn.textContent === "✏️") {
                     // Switch to edit mode: replace span with a text input
                     const input = document.createElement("input")
                     input.type = "text"
                     input.value = nameSpan.textContent.trim()
                     item.replaceChild(input, nameSpan)
-                    editBtn.textContent = "Save"
+                    editBtn.textContent = "✅"
                 } else {
                     // Save mode: send updated name to backend
                     const input = item.querySelector("input[type='text']")  // must specify type to avoid matching the checkbox
@@ -132,7 +132,7 @@ function loadTasks(){
             item.appendChild(editBtn)
 
             const deleteBtn = document.createElement("button")
-            deleteBtn.textContent = "Delete"
+            deleteBtn.textContent = "🗑️"
             deleteBtn.addEventListener("click", () => {
                 fetch("/delete-task", {
                     method: "POST",

@@ -51,6 +51,17 @@ def init_db():
     except sqlite3.OperationalError:
         pass  # column already exists
 
+    # Join table for many-to-many parent/child relationships
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS task_dependencies (
+            parent_id INTEGER NOT NULL,
+            child_id  INTEGER NOT NULL,
+            PRIMARY KEY (parent_id, child_id),
+            FOREIGN KEY (parent_id) REFERENCES tasks(id),
+            FOREIGN KEY (child_id)  REFERENCES tasks(id)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
@@ -66,15 +77,50 @@ def create_task(name):
 def get_tasks():
     conn = get_connection()
     cursor = conn.cursor()
+
     cursor.execute('SELECT id, name, status, date_completed, priority, due_date FROM tasks')
     rows = cursor.fetchall()
+    tasks = {row['id']: dict(row) for row in rows}
+    for t in tasks.values():
+        t['parent_ids'] = []
+        t['child_ids']  = []
+
+    cursor.execute('SELECT parent_id, child_id FROM task_dependencies')
+    for dep in cursor.fetchall():
+        p, c = dep['parent_id'], dep['child_id']
+        if p in tasks:
+            tasks[p]['child_ids'].append(c)
+        if c in tasks:
+            tasks[c]['parent_ids'].append(p)
+
     conn.close()
-    return [dict(row) for row in rows]
+    return list(tasks.values())
 
 def delete_task(task_id):
     conn = get_connection()
     cursor = conn.cursor()
+    cursor.execute('DELETE FROM task_dependencies WHERE parent_id = ? OR child_id = ?', (task_id, task_id))
     cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
+    conn.commit()
+    conn.close()
+
+def add_dependency(parent_id, child_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT OR IGNORE INTO task_dependencies (parent_id, child_id) VALUES (?, ?)',
+        (parent_id, child_id)
+    )
+    conn.commit()
+    conn.close()
+
+def remove_dependency(parent_id, child_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        'DELETE FROM task_dependencies WHERE parent_id = ? AND child_id = ?',
+        (parent_id, child_id)
+    )
     conn.commit()
     conn.close()
 

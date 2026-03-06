@@ -49,5 +49,17 @@ def update_priority():
     task.update_task_priority(data.get("id"), data.get("priority"))
     return jsonify({"ok": True})
 
+@app.route('/add-dependency', methods=['POST'])
+def add_dependency():
+    data = request.get_json()
+    task.add_dependency(data.get('parent_id'), data.get('child_id'))
+    return jsonify({"ok": True})
+
+@app.route('/remove-dependency', methods=['POST'])
+def remove_dependency():
+    data = request.get_json()
+    task.remove_dependency(data.get('parent_id'), data.get('child_id'))
+    return jsonify({"ok": True})
+
 if __name__ == '__main__':
     app.run(debug=True)

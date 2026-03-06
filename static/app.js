@@ -147,78 +147,80 @@ function loadTasks(){
             })
             item.appendChild(deleteBtn)
 
-            // --- Dependency section ---
-            const depSection = document.createElement("div")
+            // --- Dependency section (Tasks tab only) ---
+            if (currentTab === 'tasks') {
+                const depSection = document.createElement("div")
 
-            // Children label (read-only): auto-populated from child_ids
-            const childrenLabel = document.createElement("span")
-            if (task.child_ids.length > 0) {
-                const childNames = task.child_ids.map(cid => {
-                    const found = allTasks.find(t => t.id === cid)
-                    return found ? found.name : '(unknown)'
+                // Children label (read-only): auto-populated from child_ids
+                const childrenLabel = document.createElement("span")
+                if (task.child_ids.length > 0) {
+                    const childNames = task.child_ids.map(cid => {
+                        const found = allTasks.find(t => t.id === cid)
+                        return found ? found.name : '(unknown)'
+                    })
+                    childrenLabel.textContent = 'Children: ' + childNames.join(', ') + ' '
+                } else {
+                    childrenLabel.style.display = 'none'
+                }
+                depSection.appendChild(childrenLabel)
+
+                // Parents row: one removable tag per parent + add-parent dropdown
+                const parentsRow = document.createElement("div")
+
+                task.parent_ids.forEach(pid => {
+                    const parentTask = allTasks.find(t => t.id === pid)
+                    if (!parentTask) return
+                    const tag = document.createElement('span')
+                    tag.textContent = parentTask.name + ' '
+                    const removeBtn = document.createElement('button')
+                    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>'
+                    removeBtn.addEventListener('click', () => {
+                        fetch('/remove-dependency', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({parent_id: pid, child_id: task.id})
+                        })
+                        .then(r => r.json())
+                        .then(() => loadTasks())
+                    })
+                    tag.appendChild(removeBtn)
+                    parentsRow.appendChild(tag)
                 })
-                childrenLabel.textContent = 'Children: ' + childNames.join(', ') + ' '
-            } else {
-                childrenLabel.style.display = 'none'
-            }
-            depSection.appendChild(childrenLabel)
 
-            // Parents row: one removable tag per parent + add-parent dropdown
-            const parentsRow = document.createElement("div")
+                // Add-parent dropdown: excludes self, existing parents, direct children
+                const addParentSelect = document.createElement('select')
+                const placeholder = document.createElement('option')
+                placeholder.value = ''
+                placeholder.textContent = '+ Add parent'
+                placeholder.disabled = true
+                placeholder.selected = true
+                addParentSelect.appendChild(placeholder)
 
-            task.parent_ids.forEach(pid => {
-                const parentTask = allTasks.find(t => t.id === pid)
-                if (!parentTask) return
-                const tag = document.createElement('span')
-                tag.textContent = parentTask.name + ' '
-                const removeBtn = document.createElement('button')
-                removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>'
-                removeBtn.addEventListener('click', () => {
-                    fetch('/remove-dependency', {
+                allTasks.forEach(other => {
+                    if (other.id === task.id) return                // no self-parenting
+                    if (task.parent_ids.includes(other.id)) return  // already a parent
+                    if (task.child_ids.includes(other.id)) return   // direct cycle guard
+                    const opt = document.createElement('option')
+                    opt.value = other.id
+                    opt.textContent = other.name
+                    addParentSelect.appendChild(opt)
+                })
+
+                addParentSelect.addEventListener('change', () => {
+                    const selectedParentId = parseInt(addParentSelect.value)
+                    fetch('/add-dependency', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({parent_id: pid, child_id: task.id})
+                        body: JSON.stringify({parent_id: selectedParentId, child_id: task.id})
                     })
                     .then(r => r.json())
                     .then(() => loadTasks())
                 })
-                tag.appendChild(removeBtn)
-                parentsRow.appendChild(tag)
-            })
+                parentsRow.appendChild(addParentSelect)
 
-            // Add-parent dropdown: excludes self, existing parents, direct children
-            const addParentSelect = document.createElement('select')
-            const placeholder = document.createElement('option')
-            placeholder.value = ''
-            placeholder.textContent = '+ Add parent'
-            placeholder.disabled = true
-            placeholder.selected = true
-            addParentSelect.appendChild(placeholder)
-
-            allTasks.forEach(other => {
-                if (other.id === task.id) return                // no self-parenting
-                if (task.parent_ids.includes(other.id)) return  // already a parent
-                if (task.child_ids.includes(other.id)) return   // direct cycle guard
-                const opt = document.createElement('option')
-                opt.value = other.id
-                opt.textContent = other.name
-                addParentSelect.appendChild(opt)
-            })
-
-            addParentSelect.addEventListener('change', () => {
-                const selectedParentId = parseInt(addParentSelect.value)
-                fetch('/add-dependency', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({parent_id: selectedParentId, child_id: task.id})
-                })
-                .then(r => r.json())
-                .then(() => loadTasks())
-            })
-            parentsRow.appendChild(addParentSelect)
-
-            depSection.appendChild(parentsRow)
-            item.appendChild(depSection)
+                depSection.appendChild(parentsRow)
+                item.appendChild(depSection)
+            }
             // --- End dependency section ---
 
             list.appendChild(item)

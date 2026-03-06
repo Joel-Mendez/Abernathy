@@ -39,33 +39,38 @@ function loadTasks(){
 
             const item = document.createElement("li")
 
-            // Checkbox: checked when status is Completed, unchecked otherwise
-            const checkbox = document.createElement("input")
-            checkbox.type = "checkbox"
-            checkbox.checked = task.status === "Completed"
-            checkbox.addEventListener("change", () => {
-                const newStatus = checkbox.checked ? "Completed" : "To-Do"
-                fetch("/update-status", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id, status: newStatus})
+            if (currentTab === 'progress') {
+                // Show completion time in 12-hour format with seconds
+                if (task.date_completed) {
+                    const timeSpan = document.createElement("span")
+                    const timePart = task.date_completed.split(' ')[1]  // "14:22:00"
+                    const [h, m, s] = timePart.split(':').map(Number)
+                    const ampm = h >= 12 ? 'PM' : 'AM'
+                    const hour12 = h % 12 || 12
+                    timeSpan.textContent = `(${hour12}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ampm}) `
+                    item.appendChild(timeSpan)
+                }
+            } else {
+                // Checkbox: checked when status is Completed, unchecked otherwise
+                const checkbox = document.createElement("input")
+                checkbox.type = "checkbox"
+                checkbox.checked = task.status === "Completed"
+                checkbox.addEventListener("change", () => {
+                    const newStatus = checkbox.checked ? "Completed" : "To-Do"
+                    fetch("/update-status", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({id: task.id, status: newStatus})
+                    })
+                    .then(response => response.json())
+                    .then(() => loadTasks())  // refresh so task moves to correct tab
                 })
-                .then(response => response.json())
-                .then(() => loadTasks())  // refresh so task moves to correct tab
-            })
-            // Show completion time to the left of the checkbox on Progress tab
-            if (currentTab === 'progress' && task.date_completed) {
-                const timeSpan = document.createElement("span")
-                const timePart = task.date_completed.split(' ')[1]  // "14:22:00"
-                timeSpan.textContent = timePart.slice(0, 5) + " "   // "14:22"
-                item.appendChild(timeSpan)
+                item.appendChild(checkbox)
             }
-
-            item.appendChild(checkbox)
 
             // Use a span for the name so it can be swapped with an input on edit
             const nameSpan = document.createElement("span")
-            nameSpan.textContent = task.name + " "
+            nameSpan.textContent = currentTab === 'progress' ? task.name : task.name + " "
             item.appendChild(nameSpan)
 
             if (currentTab === 'tasks') {
@@ -129,44 +134,46 @@ function loadTasks(){
                 item.appendChild(dueDateInput)
             }
 
-            const editBtn = document.createElement("button")
-            editBtn.dataset.mode = "edit"
-            editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>'
-            editBtn.addEventListener("click", () => {
-                if (editBtn.dataset.mode === "edit") {
-                    // Switch to edit mode: replace span with a text input
-                    const input = document.createElement("input")
-                    input.type = "text"
-                    input.value = nameSpan.textContent.trim()
-                    item.replaceChild(input, nameSpan)
-                    editBtn.dataset.mode = "save"
-                    editBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
-                } else {
-                    // Save mode: send updated name to backend
-                    const input = item.querySelector("input[type='text']")  // must specify type to avoid matching the checkbox
-                    fetch("/update-task", {
+            if (currentTab === 'tasks') {
+                const editBtn = document.createElement("button")
+                editBtn.dataset.mode = "edit"
+                editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>'
+                editBtn.addEventListener("click", () => {
+                    if (editBtn.dataset.mode === "edit") {
+                        // Switch to edit mode: replace span with a text input
+                        const input = document.createElement("input")
+                        input.type = "text"
+                        input.value = nameSpan.textContent.trim()
+                        item.replaceChild(input, nameSpan)
+                        editBtn.dataset.mode = "save"
+                        editBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
+                    } else {
+                        // Save mode: send updated name to backend
+                        const input = item.querySelector("input[type='text']")  // must specify type to avoid matching the checkbox
+                        fetch("/update-task", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: task.id, name: input.value})
+                        })
+                        .then(response => response.json())
+                        .then(() => loadTasks())  // refresh the list after saving
+                    }
+                })
+                item.appendChild(editBtn)
+
+                const deleteBtn = document.createElement("button")
+                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'
+                deleteBtn.addEventListener("click", () => {
+                    fetch("/delete-task", {
                         method: "POST",
                         headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({id: task.id, name: input.value})
+                        body: JSON.stringify({id: task.id})
                     })
                     .then(response => response.json())
-                    .then(() => loadTasks())  // refresh the list after saving
-                }
-            })
-            item.appendChild(editBtn)
-
-            const deleteBtn = document.createElement("button")
-            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'
-            deleteBtn.addEventListener("click", () => {
-                fetch("/delete-task", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id})
+                    .then(() => loadTasks())  // refresh the list after deletion
                 })
-                .then(response => response.json())
-                .then(() => loadTasks())  // refresh the list after deletion
-            })
-            item.appendChild(deleteBtn)
+                item.appendChild(deleteBtn)
+            }
 
             // --- Dependency section (Tasks tab only) ---
             if (currentTab === 'tasks') {

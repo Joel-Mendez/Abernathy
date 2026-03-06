@@ -41,3 +41,12 @@ body {
     list-style: none;
     padding-left: 0;
 }
+
+#task-list h3 {
+    margin-top: 24px;
+    margin-bottom: 4px;
+}
+
+#task-list li {
+    margin-bottom: 2px;
+}

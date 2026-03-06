@@ -11,25 +11,30 @@ body {
 #sidebar {
     display: flex;
     flex-direction: column;
-    width: 130px;
-    padding: 16px 8px;
+    align-items: center;
+    width: 64px;
+    padding: 16px 0;
     border-right: 1px solid #ccc;
+    gap: 8px;
 }
 
 #sidebar button {
-    padding: 10px 8px;
-    margin-bottom: 8px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     background: none;
     border: none;
-    text-align: left;
-    font-size: 14px;
-    border-left: 3px solid transparent;
+    border-radius: 10px;
+    font-size: 20px;
+    color: #222;
 }
 
 #sidebar button.active {
-    font-weight: bold;
-    border-left: 3px solid black;
+    background: #111;
+    color: #fff;
 }
 
 #content {

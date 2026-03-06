@@ -25,7 +25,6 @@ function loadTasks(){
             checkbox.checked = task.status === "Completed"
             checkbox.addEventListener("change", () => {
                 const newStatus = checkbox.checked ? "Completed" : "To-Do"
-                select.value = newStatus  // keep dropdown in sync
                 fetch("/update-status", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
@@ -48,64 +47,66 @@ function loadTasks(){
                 item.appendChild(dateSpan)
             }
 
-            const select = document.createElement("select")
-            const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]
-            statuses.forEach(s => {
-                const opt = document.createElement("option")
-                opt.value = s
-                opt.textContent = s
-                if (s === task.status) opt.selected = true
-                select.appendChild(opt)
-            })
-            select.addEventListener("change", () => {
-                checkbox.checked = select.value === "Completed"  // keep checkbox in sync
-                fetch("/update-status", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id, status: select.value})
+            if (currentTab === 'tasks') {
+                const select = document.createElement("select")
+                const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]
+                statuses.forEach(s => {
+                    const opt = document.createElement("option")
+                    opt.value = s
+                    opt.textContent = s
+                    if (s === task.status) opt.selected = true
+                    select.appendChild(opt)
                 })
-                .then(response => response.json())
-                .then(() => loadTasks())  // refresh so task moves to correct tab
-            })
-            item.appendChild(select)
+                select.addEventListener("change", () => {
+                    checkbox.checked = select.value === "Completed"  // keep checkbox in sync
+                    fetch("/update-status", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({id: task.id, status: select.value})
+                    })
+                    .then(response => response.json())
+                    .then(() => loadTasks())  // refresh so task moves to correct tab
+                })
+                item.appendChild(select)
 
-            const prioritySelect = document.createElement("select")
-            const priorities = [
-                [1, "1 — Minimal"],
-                [2, "2 — Routine"],
-                [3, "3 — Important"],
-                [4, "4 — Urgent"],
-                [5, "5 — Critical"]
-            ]
-            priorities.forEach(([val, label]) => {
-                const opt = document.createElement("option")
-                opt.value = val
-                opt.textContent = label
-                if (val === task.priority) opt.selected = true
-                prioritySelect.appendChild(opt)
-            })
-            prioritySelect.addEventListener("change", () => {
-                fetch("/update-priority", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id, priority: parseInt(prioritySelect.value)})
+                const prioritySelect = document.createElement("select")
+                const priorities = [
+                    [1, "1 — Minimal"],
+                    [2, "2 — Routine"],
+                    [3, "3 — Important"],
+                    [4, "4 — Urgent"],
+                    [5, "5 — Critical"]
+                ]
+                priorities.forEach(([val, label]) => {
+                    const opt = document.createElement("option")
+                    opt.value = val
+                    opt.textContent = label
+                    if (val === task.priority) opt.selected = true
+                    prioritySelect.appendChild(opt)
                 })
-                .then(response => response.json())
-            })
-            item.appendChild(prioritySelect)
+                prioritySelect.addEventListener("change", () => {
+                    fetch("/update-priority", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({id: task.id, priority: parseInt(prioritySelect.value)})
+                    })
+                    .then(response => response.json())
+                })
+                item.appendChild(prioritySelect)
 
-            const dueDateInput = document.createElement("input")
-            dueDateInput.type = "date"
-            dueDateInput.value = task.due_date || ""  // pre-fill if set, else empty
-            dueDateInput.addEventListener("change", () => {
-                fetch("/update-due-date", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id, due_date: dueDateInput.value || null})
+                const dueDateInput = document.createElement("input")
+                dueDateInput.type = "date"
+                dueDateInput.value = task.due_date || ""  // pre-fill if set, else empty
+                dueDateInput.addEventListener("change", () => {
+                    fetch("/update-due-date", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({id: task.id, due_date: dueDateInput.value || null})
+                    })
+                    .then(response => response.json())
                 })
-                .then(response => response.json())
-            })
-            item.appendChild(dueDateInput)
+                item.appendChild(dueDateInput)
+            }
 
             const editBtn = document.createElement("button")
             editBtn.dataset.mode = "edit"

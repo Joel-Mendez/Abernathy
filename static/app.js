@@ -16,7 +16,27 @@ function loadTasks(){
 
         const list = document.getElementById("task-list")
         list.innerHTML = ""  // clear the list before re-rendering
+        let currentDate = null
         tasks.forEach(task => {
+            // Insert a date header whenever the date changes (Progress tab only)
+            if (currentTab === 'progress') {
+                const taskDate = task.date_completed ? task.date_completed.split(' ')[0] : 'No Date'
+                if (taskDate !== currentDate) {
+                    currentDate = taskDate
+                    const header = document.createElement('h3')
+                    if (taskDate === 'No Date') {
+                        header.textContent = 'No Date'
+                    } else {
+                        const weekdays = ['Sun.', 'Mon.', 'Tue.', 'Wed.', 'Thu.', 'Fri.', 'Sat.']
+                        const months = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.']
+                        const [year, month, day] = taskDate.split('-').map(Number)
+                        const d = new Date(year, month - 1, day)
+                        header.textContent = `${weekdays[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}, ${year}`
+                    }
+                    list.appendChild(header)
+                }
+            }
+
             const item = document.createElement("li")
 
             // Checkbox: checked when status is Completed, unchecked otherwise
@@ -33,19 +53,20 @@ function loadTasks(){
                 .then(response => response.json())
                 .then(() => loadTasks())  // refresh so task moves to correct tab
             })
+            // Show completion time to the left of the checkbox on Progress tab
+            if (currentTab === 'progress' && task.date_completed) {
+                const timeSpan = document.createElement("span")
+                const timePart = task.date_completed.split(' ')[1]  // "14:22:00"
+                timeSpan.textContent = timePart.slice(0, 5) + " "   // "14:22"
+                item.appendChild(timeSpan)
+            }
+
             item.appendChild(checkbox)
 
             // Use a span for the name so it can be swapped with an input on edit
             const nameSpan = document.createElement("span")
             nameSpan.textContent = task.name + " "
             item.appendChild(nameSpan)
-
-            // Show completion date on the Progress tab
-            if (currentTab === 'progress' && task.date_completed) {
-                const dateSpan = document.createElement("span")
-                dateSpan.textContent = "— completed " + task.date_completed + " "
-                item.appendChild(dateSpan)
-            }
 
             if (currentTab === 'tasks') {
                 const select = document.createElement("select")

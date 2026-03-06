@@ -108,15 +108,17 @@ function loadTasks(){
             item.appendChild(dueDateInput)
 
             const editBtn = document.createElement("button")
-            editBtn.textContent = "✏️"
+            editBtn.dataset.mode = "edit"
+            editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>'
             editBtn.addEventListener("click", () => {
-                if (editBtn.textContent === "✏️") {
+                if (editBtn.dataset.mode === "edit") {
                     // Switch to edit mode: replace span with a text input
                     const input = document.createElement("input")
                     input.type = "text"
                     input.value = nameSpan.textContent.trim()
                     item.replaceChild(input, nameSpan)
-                    editBtn.textContent = "✅"
+                    editBtn.dataset.mode = "save"
+                    editBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
                 } else {
                     // Save mode: send updated name to backend
                     const input = item.querySelector("input[type='text']")  // must specify type to avoid matching the checkbox
@@ -132,7 +134,7 @@ function loadTasks(){
             item.appendChild(editBtn)
 
             const deleteBtn = document.createElement("button")
-            deleteBtn.textContent = "🗑️"
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'
             deleteBtn.addEventListener("click", () => {
                 fetch("/delete-task", {
                     method: "POST",
@@ -169,7 +171,7 @@ function loadTasks(){
                 const tag = document.createElement('span')
                 tag.textContent = parentTask.name + ' '
                 const removeBtn = document.createElement('button')
-                removeBtn.textContent = '×'
+                removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>'
                 removeBtn.addEventListener('click', () => {
                     fetch('/remove-dependency', {
                         method: 'POST',

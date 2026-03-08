@@ -61,6 +61,12 @@ def remove_dependency():
     task.remove_dependency(data.get('parent_id'), data.get('child_id'))
     return jsonify({"ok": True})
 
+@app.route('/update-task-project', methods=['POST'])
+def update_task_project():
+    data = request.get_json()
+    task.update_task_project(data.get("id"), data.get("project_id"))
+    return jsonify({"ok": True})
+
 @app.route('/projects', methods=['GET'])
 def get_projects():
     return jsonify(task.get_projects())

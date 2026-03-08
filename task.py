@@ -51,6 +51,13 @@ def init_db():
     except sqlite3.OperationalError:
         pass  # column already exists
 
+    # Migration: add project_id column if this db was created before it existed
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN project_id INTEGER")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
     # Join table for many-to-many parent/child relationships
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS task_dependencies (
@@ -96,6 +103,13 @@ def delete_project(project_id):
     conn.commit()
     conn.close()
 
+def update_task_project(task_id, project_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tasks SET project_id = ? WHERE id = ?', (project_id, task_id))
+    conn.commit()
+    conn.close()
+
 def update_project(project_id, name):
     conn = get_connection()
     cursor = conn.cursor()
@@ -116,7 +130,7 @@ def get_tasks():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT id, name, status, date_completed, priority, due_date FROM tasks')
+    cursor.execute('SELECT id, name, status, date_completed, priority, due_date, project_id FROM tasks')
     rows = cursor.fetchall()
     tasks = {row['id']: dict(row) for row in rows}
     for t in tasks.values():

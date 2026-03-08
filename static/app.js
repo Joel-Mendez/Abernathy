@@ -1,9 +1,11 @@
 let currentTab = 'tasks'  // tracks which tab is active
 
 function loadTasks(){
-    fetch("/tasks")
-    .then(response => response.json())
-    .then(allTasks => {
+    Promise.all([
+        fetch("/tasks").then(r => r.json()),
+        fetch("/projects").then(r => r.json())
+    ])
+    .then(([allTasks, allProjects]) => {
         if (currentTab === 'projects') {
             document.getElementById("add-btn").style.display = ""
             document.getElementById("add-task").style.display = "none"
@@ -219,6 +221,41 @@ function loadTasks(){
                     }
                 })
                 item.appendChild(editBtn)
+
+                const folderBtn = document.createElement("button")
+                folderBtn.innerHTML = '<i class="fa-solid fa-folder"></i>'
+                folderBtn.title = task.project_id
+                    ? allProjects.find(p => p.id === task.project_id)?.name || "Assign project"
+                    : "Assign project"
+                folderBtn.addEventListener("click", () => {
+                    const existing = item.querySelector(".project-select")
+                    if (existing) { existing.remove(); return }
+                    const projectSelect = document.createElement("select")
+                    projectSelect.className = "project-select"
+                    const none = document.createElement("option")
+                    none.value = ""
+                    none.textContent = "— no project —"
+                    if (!task.project_id) none.selected = true
+                    projectSelect.appendChild(none)
+                    allProjects.forEach(p => {
+                        const opt = document.createElement("option")
+                        opt.value = p.id
+                        opt.textContent = p.name
+                        if (p.id === task.project_id) opt.selected = true
+                        projectSelect.appendChild(opt)
+                    })
+                    projectSelect.addEventListener("change", () => {
+                        fetch("/update-task-project", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: task.id, project_id: projectSelect.value || null})
+                        })
+                        .then(r => r.json())
+                        .then(() => loadTasks())
+                    })
+                    item.appendChild(projectSelect)
+                })
+                item.appendChild(folderBtn)
 
                 const deleteBtn = document.createElement("button")
                 deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'

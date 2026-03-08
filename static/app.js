@@ -152,30 +152,40 @@ function loadTasks(){
                 })
                 item.appendChild(select)
 
-                const prioritySelect = document.createElement("select")
-                const priorities = [
-                    [1, "1 — Minimal"],
-                    [2, "2 — Routine"],
-                    [3, "3 — Important"],
-                    [4, "4 — Urgent"],
-                    [5, "5 — Critical"]
-                ]
-                priorities.forEach(([val, label]) => {
-                    const opt = document.createElement("option")
-                    opt.value = val
-                    opt.textContent = label
-                    if (val === task.priority) opt.selected = true
-                    prioritySelect.appendChild(opt)
-                })
-                prioritySelect.addEventListener("change", () => {
-                    fetch("/update-priority", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({id: task.id, priority: parseInt(prioritySelect.value)})
+                const priorityBtn = document.createElement("button")
+                priorityBtn.innerHTML = '<i class="fa-solid fa-exclamation"></i>'
+                priorityBtn.title = task.priority ? `Priority ${task.priority}` : "Set priority"
+                priorityBtn.addEventListener("click", () => {
+                    const existing = item.querySelector(".priority-select")
+                    if (existing) { existing.remove(); return }
+                    const prioritySelect = document.createElement("select")
+                    prioritySelect.className = "priority-select"
+                    const priorities = [
+                        [1, "1 — Minimal"],
+                        [2, "2 — Routine"],
+                        [3, "3 — Important"],
+                        [4, "4 — Urgent"],
+                        [5, "5 — Critical"]
+                    ]
+                    priorities.forEach(([val, label]) => {
+                        const opt = document.createElement("option")
+                        opt.value = val
+                        opt.textContent = label
+                        if (val === task.priority) opt.selected = true
+                        prioritySelect.appendChild(opt)
                     })
-                    .then(response => response.json())
+                    prioritySelect.addEventListener("change", () => {
+                        fetch("/update-priority", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: task.id, priority: parseInt(prioritySelect.value)})
+                        })
+                        .then(response => response.json())
+                        .then(() => loadTasks())
+                    })
+                    item.appendChild(prioritySelect)
                 })
-                item.appendChild(prioritySelect)
+                item.appendChild(priorityBtn)
 
                 const calendarBtn = document.createElement("button")
                 calendarBtn.innerHTML = '<i class="fa-solid fa-calendar"></i>'

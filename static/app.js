@@ -4,6 +4,64 @@ function loadTasks(){
     fetch("/tasks")
     .then(response => response.json())
     .then(allTasks => {
+        if (currentTab === 'projects') {
+            document.getElementById("add-btn").style.display = ""
+            document.getElementById("add-task").style.display = "none"
+            fetch("/projects")
+            .then(r => r.json())
+            .then(projects => {
+                const list = document.getElementById("task-list")
+                list.innerHTML = ""
+                projects.forEach(project => {
+                    const item = document.createElement("li")
+
+                    const nameSpan = document.createElement("span")
+                    nameSpan.textContent = project.name + " "
+                    item.appendChild(nameSpan)
+
+                    const editBtn = document.createElement("button")
+                    editBtn.dataset.mode = "edit"
+                    editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>'
+                    editBtn.addEventListener("click", () => {
+                        if (editBtn.dataset.mode === "edit") {
+                            const input = document.createElement("input")
+                            input.type = "text"
+                            input.value = nameSpan.textContent.trim()
+                            item.replaceChild(input, nameSpan)
+                            editBtn.dataset.mode = "save"
+                            editBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
+                        } else {
+                            const input = item.querySelector("input[type='text']")
+                            fetch("/update-project", {
+                                method: "POST",
+                                headers: {"Content-Type": "application/json"},
+                                body: JSON.stringify({id: project.id, name: input.value})
+                            })
+                            .then(r => r.json())
+                            .then(() => loadTasks())
+                        }
+                    })
+                    item.appendChild(editBtn)
+
+                    const deleteBtn = document.createElement("button")
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'
+                    deleteBtn.addEventListener("click", () => {
+                        fetch("/delete-project", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: project.id})
+                        })
+                        .then(r => r.json())
+                        .then(() => loadTasks())
+                    })
+                    item.appendChild(deleteBtn)
+
+                    list.appendChild(item)
+                })
+            })
+            return
+        }
+
         // Filter tasks based on active tab; Progress tab sorted newest completion first
         const tasks = currentTab === 'tasks'
             ? allTasks.filter(t => t.status !== 'Completed')
@@ -259,27 +317,36 @@ function loadTasks(){
 
 function switchTab(tab) {
     currentTab = tab
-    // Update active styling: toggle adds the class if true, removes it if false
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
+    document.getElementById("tab-projects").classList.toggle("active", tab === 'projects')
     document.getElementById("tab-progress").classList.toggle("active", tab === 'progress')
-    document.getElementById("tab-title").textContent = tab === 'tasks' ? "Tasks" : "Progress"
+    const titles = { tasks: "Tasks", projects: "Projects", progress: "Progress" }
+    document.getElementById("tab-title").textContent = titles[tab]
     loadTasks()
 }
 
 function toggleAddForm() {
     const form = document.getElementById("add-task")
+    const input = document.getElementById("input")
     const isOpen = form.style.display === "flex"
     form.style.display = isOpen ? "none" : "flex"
-    if (!isOpen) document.getElementById("input").focus()
+    if (!isOpen) {
+        input.placeholder = currentTab === 'projects' ? "Project name ..." : "Task name ..."
+        input.focus()
+    }
 }
 
 function sendInput(){
     const user_input = document.getElementById("input").value
     if (!user_input.trim()) return
-    fetch("/create-task",{
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({message:user_input})
+    const url = currentTab === 'projects' ? "/create-project" : "/create-task"
+    const body = currentTab === 'projects'
+        ? JSON.stringify({name: user_input})
+        : JSON.stringify({message: user_input})
+    fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: body
     })
     .then(response => response.json())
     .then(() => {

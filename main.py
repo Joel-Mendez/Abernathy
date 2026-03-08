@@ -61,5 +61,28 @@ def remove_dependency():
     task.remove_dependency(data.get('parent_id'), data.get('child_id'))
     return jsonify({"ok": True})
 
+@app.route('/projects', methods=['GET'])
+def get_projects():
+    return jsonify(task.get_projects())
+
+@app.route('/create-project', methods=['POST'])
+def create_project():
+    data = request.get_json()
+    name = data.get("name", "")
+    project_id = task.create_project(name)
+    return jsonify({"id": project_id, "name": name})
+
+@app.route('/delete-project', methods=['POST'])
+def delete_project():
+    data = request.get_json()
+    task.delete_project(data.get("id"))
+    return jsonify({"ok": True})
+
+@app.route('/update-project', methods=['POST'])
+def update_project():
+    data = request.get_json()
+    task.update_project(data.get("id"), data.get("name"))
+    return jsonify({"ok": True})
+
 if __name__ == '__main__':
     app.run(debug=True)

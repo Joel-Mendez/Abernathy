@@ -177,18 +177,28 @@ function loadTasks(){
                 })
                 item.appendChild(prioritySelect)
 
-                const dueDateInput = document.createElement("input")
-                dueDateInput.type = "date"
-                dueDateInput.value = task.due_date || ""  // pre-fill if set, else empty
-                dueDateInput.addEventListener("change", () => {
-                    fetch("/update-due-date", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({id: task.id, due_date: dueDateInput.value || null})
+                const calendarBtn = document.createElement("button")
+                calendarBtn.innerHTML = '<i class="fa-solid fa-calendar"></i>'
+                calendarBtn.title = task.due_date || "Set due date"
+                calendarBtn.addEventListener("click", () => {
+                    const existing = item.querySelector(".due-date-input")
+                    if (existing) { existing.remove(); return }
+                    const dueDateInput = document.createElement("input")
+                    dueDateInput.type = "date"
+                    dueDateInput.className = "due-date-input"
+                    dueDateInput.value = task.due_date || ""
+                    dueDateInput.addEventListener("change", () => {
+                        fetch("/update-due-date", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: task.id, due_date: dueDateInput.value || null})
+                        })
+                        .then(response => response.json())
+                        .then(() => loadTasks())
                     })
-                    .then(response => response.json())
+                    item.appendChild(dueDateInput)
                 })
-                item.appendChild(dueDateInput)
+                item.appendChild(calendarBtn)
             }
 
             if (currentTab === 'tasks') {

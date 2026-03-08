@@ -11,8 +11,9 @@ function loadTasks(){
                 .filter(t => t.status === 'Completed')
                 .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed))
 
-        // Only show the add-task input on the Tasks tab
-        document.getElementById("add-task").style.display = currentTab === 'tasks' ? "" : "none"
+        // Only show the + button on the Tasks tab; always close the form on tab switch
+        document.getElementById("add-btn").style.display = currentTab === 'tasks' ? "" : "none"
+        document.getElementById("add-task").style.display = "none"
 
         const list = document.getElementById("task-list")
         list.innerHTML = ""  // clear the list before re-rendering
@@ -265,11 +266,16 @@ function switchTab(tab) {
     loadTasks()
 }
 
-function sendInput(){
-    // Retrieve the User's Input
-    const user_input = document.getElementById("input").value
+function toggleAddForm() {
+    const form = document.getElementById("add-task")
+    const isOpen = form.style.display === "flex"
+    form.style.display = isOpen ? "none" : "flex"
+    if (!isOpen) document.getElementById("input").focus()
+}
 
-    // Send User Input as a String to back-end
+function sendInput(){
+    const user_input = document.getElementById("input").value
+    if (!user_input.trim()) return
     fetch("/create-task",{
         method:"POST",
         headers: {"Content-Type":"application/json"},
@@ -277,9 +283,14 @@ function sendInput(){
     })
     .then(response => response.json())
     .then(() => {
-        document.getElementById("input").value = ""  // clear the text box
-        loadTasks()  // refresh the list
+        document.getElementById("input").value = ""
+        document.getElementById("add-task").style.display = "none"
+        loadTasks()
     })
 }
+
+document.getElementById("input").addEventListener("keydown", e => {
+    if (e.key === "Enter") sendInput()
+})
 
 loadTasks()  // load existing tasks when the page first opens

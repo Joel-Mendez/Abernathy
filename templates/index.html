@@ -14,13 +14,14 @@
             </div>
             <div id="content">
                 <h1 id="tab-title">Tasks</h1>
-                <div id="add-task">
-                    <input type="text" id="input" placeholder="Task name ...">
-                    <button type="button" onclick="sendInput()">Send</button>
-                </div>
                 <ul id="task-list"></ul>
             </div>
         </div>
+        <div id="add-task">
+            <input type="text" id="input" placeholder="Task name ...">
+            <button type="button" onclick="sendInput()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+        <button id="add-btn" onclick="toggleAddForm()"><i class="fa-solid fa-plus"></i></button>
         <script src="{{ url_for('static', filename='app.js') }}"></script>
     </body>
 </html>

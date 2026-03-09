@@ -1,7 +1,11 @@
-let currentTab = 'tasks'  // tracks which tab is active
-let currentProject = null  // set when viewing a project's tasks
+let currentTab = 'tasks'      // tracks which tab is active
+let currentProject = null     // set when viewing a project's tasks
+let currentTaskView = null    // 'priority' | 'project' | 'duedate' | null (flat)
 
 function loadTasks(){
+    const showToggle = currentTab === 'tasks' || currentProject !== null
+    document.getElementById("view-toggle").style.display = showToggle ? "" : "none"
+    document.getElementById("view-project").style.display = currentProject !== null ? "none" : ""
     Promise.all([
         fetch("/tasks").then(r => r.json()),
         fetch("/projects").then(r => r.json())
@@ -71,7 +75,7 @@ function loadTasks(){
 
         // Project detail view: show non-completed tasks for the selected project
         if (currentProject !== null) {
-            document.getElementById("add-btn").style.display = "none"
+            document.getElementById("add-btn").style.display = ""
             document.getElementById("add-task").style.display = "none"
             document.getElementById("back-btn").style.display = ""
             document.getElementById("tab-title").textContent = currentProject.name
@@ -96,8 +100,62 @@ function loadTasks(){
 
         const list = document.getElementById("task-list")
         list.innerHTML = ""  // clear the list before re-rendering
+
+        // Group tasks for the active view mode
+        let taskGroups = [{ header: null, items: tasks }]
+        if (currentTaskView) {
+            const buckets = new Map()
+            tasks.forEach(t => {
+                let key, label
+                if (currentTaskView === 'priority') {
+                    key = t.priority || 0
+                    const pl = { 0: 'No Priority', 1: '1 — Minimal', 2: '2 — Routine', 3: '3 — Important', 4: '4 — Urgent', 5: '5 — Critical' }
+                    label = pl[key]
+                } else if (currentTaskView === 'project') {
+                    const proj = allProjects.find(p => p.id === t.project_id)
+                    key = proj ? proj.id : 0
+                    label = proj ? proj.name : 'No Project'
+                } else {
+                    key = t.due_date || 'No Due Date'
+                    if (key === 'No Due Date') {
+                        label = 'No Due Date'
+                    } else {
+                        const [y, mo, dy] = key.split('-').map(Number)
+                        const dt = new Date(y, mo - 1, dy)
+                        const wd = ['Sun.', 'Mon.', 'Tue.', 'Wed.', 'Thu.', 'Fri.', 'Sat.']
+                        const mn = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.']
+                        label = `${wd[dt.getDay()]} ${mn[dt.getMonth()]} ${dt.getDate()}, ${y}`
+                    }
+                }
+                if (!buckets.has(key)) buckets.set(key, { header: label, items: [] })
+                buckets.get(key).items.push(t)
+            })
+            let entries = [...buckets.entries()]
+            if (currentTaskView === 'priority') {
+                entries.sort(([a], [b]) => { if (a === 0) return 1; if (b === 0) return -1; return b - a })
+            } else if (currentTaskView === 'project') {
+                entries.sort(([, av], [, bv]) => { if (av.header === 'No Project') return 1; if (bv.header === 'No Project') return -1; return av.header.localeCompare(bv.header) })
+            } else {
+                entries.sort(([a], [b]) => { if (a === 'No Due Date') return 1; if (b === 'No Due Date') return -1; return a.localeCompare(b) })
+            }
+            taskGroups = entries.map(([, g]) => g)
+        }
+
+        // Flatten into a render sequence, inserting group header sentinels
+        const renderItems = []
+        taskGroups.forEach(({ header, items }) => {
+            if (header !== null) renderItems.push({ task: null, groupHeader: header })
+            items.forEach(task => renderItems.push({ task, groupHeader: null }))
+        })
+
         let currentDate = null
-        tasks.forEach(task => {
+        renderItems.forEach(({ task, groupHeader }) => {
+            if (groupHeader !== null) {
+                const h = document.createElement('h3')
+                h.textContent = groupHeader
+                list.appendChild(h)
+                return
+            }
             // Insert a date header whenever the date changes (Progress tab only)
             if (currentTab === 'progress') {
                 const taskDate = task.date_completed ? task.date_completed.split(' ')[0] : 'No Date'
@@ -375,6 +433,9 @@ function loadTasks(){
 function switchTab(tab) {
     currentTab = tab
     currentProject = null
+    currentTaskView = null
+    ;['view-priority', 'view-project', 'view-duedate'].forEach(id =>
+        document.getElementById(id).classList.remove('active'))
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
     document.getElementById("tab-projects").classList.toggle("active", tab === 'projects')
     document.getElementById("tab-progress").classList.toggle("active", tab === 'progress')
@@ -383,8 +444,19 @@ function switchTab(tab) {
     loadTasks()
 }
 
+function setTaskView(view) {
+    currentTaskView = currentTaskView === view ? null : view
+    document.getElementById('view-priority').classList.toggle('active', currentTaskView === 'priority')
+    document.getElementById('view-project').classList.toggle('active', currentTaskView === 'project')
+    document.getElementById('view-duedate').classList.toggle('active', currentTaskView === 'duedate')
+    loadTasks()
+}
+
 function goBackToProjects() {
     currentProject = null
+    currentTaskView = null
+    ;['view-priority', 'view-project', 'view-duedate'].forEach(id =>
+        document.getElementById(id).classList.remove('active'))
     loadTasks()
 }
 
@@ -394,7 +466,7 @@ function toggleAddForm() {
     const isOpen = form.style.display === "flex"
     form.style.display = isOpen ? "none" : "flex"
     if (!isOpen) {
-        input.placeholder = currentTab === 'projects' ? "Project name ..." : "Task name ..."
+        input.placeholder = (currentTab === 'projects' && currentProject === null) ? "Project name ..." : "Task name ..."
         input.focus()
     }
 }
@@ -402,10 +474,10 @@ function toggleAddForm() {
 function sendInput(){
     const user_input = document.getElementById("input").value
     if (!user_input.trim()) return
-    const url = currentTab === 'projects' ? "/create-project" : "/create-task"
-    const body = currentTab === 'projects'
+    const url = (currentTab === 'projects' && currentProject === null) ? "/create-project" : "/create-task"
+    const body = (currentTab === 'projects' && currentProject === null)
         ? JSON.stringify({name: user_input})
-        : JSON.stringify({message: user_input})
+        : JSON.stringify({message: user_input, project_id: currentProject ? currentProject.id : null})
     fetch(url, {
         method: "POST",
         headers: {"Content-Type": "application/json"},

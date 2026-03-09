@@ -16,7 +16,8 @@ def get_tasks():
 def create_task():
     data = request.get_json()
     name = data.get("message", "")
-    task_id = task.create_task(name)
+    project_id = data.get("project_id", None)
+    task_id = task.create_task(name, project_id)
     return jsonify({"id": task_id, "name": name})
 
 @app.route('/delete-task', methods=['POST'])

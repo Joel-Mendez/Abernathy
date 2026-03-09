@@ -117,10 +117,10 @@ def update_project(project_id, name):
     conn.commit()
     conn.close()
 
-def create_task(name):
+def create_task(name, project_id=None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO tasks (name) VALUES (?)', (name,))
+    cursor.execute('INSERT INTO tasks (name, project_id) VALUES (?, ?)', (name, project_id))
     conn.commit()
     task_id = cursor.lastrowid
     conn.close()

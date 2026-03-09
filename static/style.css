@@ -37,6 +37,16 @@ body {
     color: #fff;
 }
 
+#back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    color: #555;
+    margin-bottom: 8px;
+}
+
 #content {
     padding: 16px;
     flex: 1;

@@ -1,4 +1,5 @@
 let currentTab = 'tasks'  // tracks which tab is active
+let currentProject = null  // set when viewing a project's tasks
 
 function loadTasks(){
     Promise.all([
@@ -6,9 +7,11 @@ function loadTasks(){
         fetch("/projects").then(r => r.json())
     ])
     .then(([allTasks, allProjects]) => {
-        if (currentTab === 'projects') {
+        if (currentTab === 'projects' && currentProject === null) {
             document.getElementById("add-btn").style.display = ""
             document.getElementById("add-task").style.display = "none"
+            document.getElementById("back-btn").style.display = "none"
+            document.getElementById("tab-title").textContent = "Projects"
             const list = document.getElementById("task-list")
             list.innerHTML = ""
             allProjects.forEach(project => {
@@ -16,6 +19,12 @@ function loadTasks(){
 
                     const nameSpan = document.createElement("span")
                     nameSpan.textContent = project.name + " "
+                    nameSpan.style.cursor = "pointer"
+                    nameSpan.style.textDecoration = "underline"
+                    nameSpan.addEventListener("click", () => {
+                        currentProject = project
+                        loadTasks()
+                    })
                     item.appendChild(nameSpan)
 
                     const editBtn = document.createElement("button")
@@ -60,16 +69,30 @@ function loadTasks(){
             return
         }
 
+        // Project detail view: show non-completed tasks for the selected project
+        if (currentProject !== null) {
+            document.getElementById("add-btn").style.display = "none"
+            document.getElementById("add-task").style.display = "none"
+            document.getElementById("back-btn").style.display = ""
+            document.getElementById("tab-title").textContent = currentProject.name
+        } else {
+            document.getElementById("back-btn").style.display = "none"
+        }
+
         // Filter tasks based on active tab; Progress tab sorted newest completion first
-        const tasks = currentTab === 'tasks'
-            ? allTasks.filter(t => t.status !== 'Completed')
-            : allTasks
-                .filter(t => t.status === 'Completed')
-                .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed))
+        const tasks = currentProject !== null
+            ? allTasks.filter(t => t.status !== 'Completed' && t.project_id === currentProject.id)
+            : currentTab === 'tasks'
+                ? allTasks.filter(t => t.status !== 'Completed')
+                : allTasks
+                    .filter(t => t.status === 'Completed')
+                    .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed))
 
         // Only show the + button on the Tasks tab; always close the form on tab switch
-        document.getElementById("add-btn").style.display = currentTab === 'tasks' ? "" : "none"
-        document.getElementById("add-task").style.display = "none"
+        if (currentProject === null) {
+            document.getElementById("add-btn").style.display = currentTab === 'tasks' ? "" : "none"
+            document.getElementById("add-task").style.display = "none"
+        }
 
         const list = document.getElementById("task-list")
         list.innerHTML = ""  // clear the list before re-rendering
@@ -129,6 +152,24 @@ function loadTasks(){
             const nameSpan = document.createElement("span")
             nameSpan.textContent = currentTab === 'progress' ? task.name : task.name + " "
             item.appendChild(nameSpan)
+
+            if (task.project_id) {
+                const project = allProjects.find(p => p.id === task.project_id)
+                if (project) {
+                    const projectLabel = document.createElement("span")
+                    projectLabel.textContent = `(${project.name}) `
+                    projectLabel.style.color = "#4a90d9"
+                    projectLabel.style.cursor = "pointer"
+                    projectLabel.addEventListener("click", () => {
+                        currentTab = 'projects'
+                        currentProject = project
+                        document.getElementById("tab-tasks").classList.remove("active")
+                        document.getElementById("tab-projects").classList.add("active")
+                        loadTasks()
+                    })
+                    item.appendChild(projectLabel)
+                }
+            }
 
             if (currentTab === 'tasks') {
                 const select = document.createElement("select")
@@ -333,11 +374,17 @@ function loadTasks(){
 
 function switchTab(tab) {
     currentTab = tab
+    currentProject = null
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
     document.getElementById("tab-projects").classList.toggle("active", tab === 'projects')
     document.getElementById("tab-progress").classList.toggle("active", tab === 'progress')
     const titles = { tasks: "Tasks", projects: "Projects", progress: "Progress" }
     document.getElementById("tab-title").textContent = titles[tab]
+    loadTasks()
+}
+
+function goBackToProjects() {
+    currentProject = null
     loadTasks()
 }
 

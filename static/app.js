@@ -211,7 +211,7 @@ function loadTasks(){
             nameSpan.textContent = currentTab === 'progress' ? task.name : task.name + " "
             item.appendChild(nameSpan)
 
-            if (task.project_id) {
+            if (task.project_id && currentProject === null) {
                 const project = allProjects.find(p => p.id === task.project_id)
                 if (project) {
                     const projectLabel = document.createElement("span")
@@ -229,7 +229,7 @@ function loadTasks(){
                 }
             }
 
-            if (currentTab === 'tasks') {
+            if (currentTab === 'tasks' || currentProject !== null) {
                 const select = document.createElement("select")
                 const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]
                 statuses.forEach(s => {
@@ -310,7 +310,7 @@ function loadTasks(){
                 item.appendChild(calendarBtn)
             }
 
-            if (currentTab === 'tasks') {
+            if (currentTab === 'tasks' || currentProject !== null) {
                 const editBtn = document.createElement("button")
                 editBtn.dataset.mode = "edit"
                 editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>'
@@ -387,7 +387,7 @@ function loadTasks(){
             }
 
             // --- Dependency section (Tasks tab only) ---
-            if (currentTab === 'tasks') {
+            if (currentTab === 'tasks' || currentProject !== null) {
                 const addParentBtn = document.createElement('button')
                 addParentBtn.innerHTML = '<i class="fa-solid fa-people-group"></i>'
                 addParentBtn.addEventListener('click', () => {

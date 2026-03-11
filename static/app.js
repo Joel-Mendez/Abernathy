@@ -405,6 +405,7 @@ function loadTasks(){
                         if (other.id === task.id) return
                         if (task.parent_ids.includes(other.id)) return
                         if (task.child_ids.includes(other.id)) return
+                        if (['Completed', 'Cancelled'].includes(other.status)) return
                         const opt = document.createElement('option')
                         opt.value = other.id
                         opt.textContent = other.name

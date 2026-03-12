@@ -165,6 +165,8 @@ function loadTasks(){
                     const proj = allProjects.find(p => p.id === t.project_id)
                     key = proj ? proj.id : 0
                     label = proj ? proj.name : 'No Project'
+                } else if (currentTaskView === 'status') {
+                    key = label = t.status || 'No Status'
                 } else {
                     key = t.due_date || 'No Due Date'
                     if (key === 'No Due Date') {
@@ -185,6 +187,13 @@ function loadTasks(){
                 entries.sort(([a], [b]) => { if (a === 0) return 1; if (b === 0) return -1; return b - a })
             } else if (currentTaskView === 'project') {
                 entries.sort(([, av], [, bv]) => { if (av.header === 'No Project') return 1; if (bv.header === 'No Project') return -1; return av.header.localeCompare(bv.header) })
+            } else if (currentTaskView === 'status') {
+                const order = ['To-Do', 'In Progress', 'Blocked', 'Waiting', 'Backlog', 'Cancelled']
+                entries.sort(([a], [b]) => {
+                    const ai = order.indexOf(a), bi = order.indexOf(b)
+                    if (ai === -1) return 1; if (bi === -1) return -1
+                    return ai - bi
+                })
             } else {
                 entries.sort(([a], [b]) => { if (a === 'No Due Date') return 1; if (b === 'No Due Date') return -1; return a.localeCompare(b) })
             }
@@ -299,26 +308,34 @@ function loadTasks(){
             }
 
             if (currentTab === 'tasks' || currentProject !== null) {
-                const select = document.createElement("select")
-                const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]
-                statuses.forEach(s => {
-                    const opt = document.createElement("option")
-                    opt.value = s
-                    opt.textContent = s
-                    if (s === task.status) opt.selected = true
-                    select.appendChild(opt)
-                })
-                select.addEventListener("change", () => {
-                    checkbox.checked = select.value === "Completed"  // keep checkbox in sync
-                    fetch("/update-status", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({id: task.id, status: select.value})
+                const statusBtn = document.createElement("button")
+                statusBtn.innerHTML = '<i class="fa-solid fa-tag"></i>'
+                statusBtn.title = task.status
+                statusBtn.addEventListener("click", () => {
+                    const existing = item.querySelector(".status-select")
+                    if (existing) { existing.remove(); return }
+                    const select = document.createElement("select")
+                    select.className = "status-select"
+                    const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]
+                    statuses.forEach(s => {
+                        const opt = document.createElement("option")
+                        opt.value = s
+                        opt.textContent = s
+                        if (s === task.status) opt.selected = true
+                        select.appendChild(opt)
                     })
-                    .then(response => response.json())
-                    .then(() => loadTasks())  // refresh so task moves to correct tab
+                    select.addEventListener("change", () => {
+                        fetch("/update-status", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: task.id, status: select.value})
+                        })
+                        .then(response => response.json())
+                        .then(() => loadTasks())
+                    })
+                    item.appendChild(select)
                 })
-                item.appendChild(select)
+                item.appendChild(statusBtn)
 
                 const priorityBtn = document.createElement("button")
                 priorityBtn.innerHTML = '<i class="fa-solid fa-exclamation"></i>'
@@ -506,7 +523,7 @@ function switchTab(tab) {
     currentTab = tab
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-project', 'view-duedate', 'view-descendants'].forEach(id =>
+    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
@@ -523,6 +540,7 @@ function setTaskView(view) {
     document.getElementById('view-priority').classList.toggle('active', currentTaskView === 'priority')
     document.getElementById('view-project').classList.toggle('active', currentTaskView === 'project')
     document.getElementById('view-duedate').classList.toggle('active', currentTaskView === 'duedate')
+    document.getElementById('view-status').classList.toggle('active', currentTaskView === 'status')
     document.getElementById('view-descendants').classList.toggle('active', currentTaskView === 'descendants')
     loadTasks()
 }
@@ -530,7 +548,7 @@ function setTaskView(view) {
 function goBackToProjects() {
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-project', 'view-duedate', 'view-descendants'].forEach(id =>
+    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     loadTasks()

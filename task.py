@@ -76,6 +76,12 @@ def init_db():
         )
     ''')
 
+    # Sync blocked status for all existing tasks that have parents
+    cursor.execute('SELECT DISTINCT child_id FROM task_dependencies')
+    child_ids = [r['child_id'] for r in cursor.fetchall()]
+    for child_id in child_ids:
+        _sync_child_status(cursor, child_id)
+
     conn.commit()
     conn.close()
 
@@ -156,6 +162,33 @@ def delete_task(task_id):
     conn.commit()
     conn.close()
 
+def _sync_child_status(cursor, child_id):
+    """Set child to Blocked if it has any incomplete parents, else To-Do (only if currently Blocked)."""
+    cursor.execute('SELECT parent_id FROM task_dependencies WHERE child_id = ?', (child_id,))
+    parent_ids = [r['parent_id'] for r in cursor.fetchall()]
+    if not parent_ids:
+        cursor.execute(
+            "UPDATE tasks SET status = 'To-Do' WHERE id = ? AND status = 'Blocked'",
+            (child_id,)
+        )
+        return
+    placeholders = ','.join('?' * len(parent_ids))
+    cursor.execute(
+        f"SELECT COUNT(*) as cnt FROM tasks WHERE id IN ({placeholders}) AND status != 'Completed'",
+        parent_ids
+    )
+    has_incomplete_parent = cursor.fetchone()['cnt'] > 0
+    if has_incomplete_parent:
+        cursor.execute(
+            "UPDATE tasks SET status = 'Blocked' WHERE id = ? AND status NOT IN ('Completed', 'Cancelled')",
+            (child_id,)
+        )
+    else:
+        cursor.execute(
+            "UPDATE tasks SET status = 'To-Do' WHERE id = ? AND status = 'Blocked'",
+            (child_id,)
+        )
+
 def add_dependency(parent_id, child_id):
     conn = get_connection()
     cursor = conn.cursor()
@@ -163,6 +196,7 @@ def add_dependency(parent_id, child_id):
         'INSERT OR IGNORE INTO task_dependencies (parent_id, child_id) VALUES (?, ?)',
         (parent_id, child_id)
     )
+    _sync_child_status(cursor, child_id)
     conn.commit()
     conn.close()
 
@@ -173,6 +207,7 @@ def remove_dependency(parent_id, child_id):
         'DELETE FROM task_dependencies WHERE parent_id = ? AND child_id = ?',
         (parent_id, child_id)
     )
+    _sync_child_status(cursor, child_id)
     conn.commit()
     conn.close()
 
@@ -210,5 +245,9 @@ def update_task_status(task_id, status):
             'UPDATE tasks SET status = ?, date_completed = NULL WHERE id = ?',
             (status, task_id)
         )
+    # Sync all direct children — they may become unblocked or re-blocked
+    cursor.execute('SELECT child_id FROM task_dependencies WHERE parent_id = ?', (task_id,))
+    for row in cursor.fetchall():
+        _sync_child_status(cursor, row['child_id'])
     conn.commit()
     conn.close()

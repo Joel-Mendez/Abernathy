@@ -1,6 +1,37 @@
 let currentTab = 'tasks'      // tracks which tab is active
 let currentProject = null     // set when viewing a project's tasks
-let currentTaskView = null    // 'priority' | 'project' | 'duedate' | null (flat)
+let currentTaskView = null    // 'priority' | 'project' | 'duedate' | 'pressure' | null (flat)
+
+// Recursively count all descendants of a task.
+// Score = sum of (child_score + 1) for each direct child, transitively.
+function countDescendants(taskId, taskMap, memo, visited = new Set()) {
+    if (taskId in memo) return memo[taskId]
+    if (visited.has(taskId)) return 0  // cycle guard
+    visited.add(taskId)
+    const task = taskMap[taskId]
+    if (!task || task.child_ids.length === 0) return (memo[taskId] = 0)
+    let score = 0
+    for (const childId of task.child_ids) {
+        score += countDescendants(childId, taskMap, memo, new Set(visited)) + 1
+    }
+    return (memo[taskId] = score)
+}
+
+// Recursively count all non-completed/non-cancelled ancestors of a task.
+function countAncestors(taskId, taskMap, memo, visited = new Set()) {
+    if (taskId in memo) return memo[taskId]
+    if (visited.has(taskId)) return 0  // cycle guard
+    visited.add(taskId)
+    const task = taskMap[taskId]
+    if (!task || task.parent_ids.length === 0) return (memo[taskId] = 0)
+    let score = 0
+    for (const parentId of task.parent_ids) {
+        const parent = taskMap[parentId]
+        if (!parent || ['Completed', 'Cancelled'].includes(parent.status)) continue
+        score += countAncestors(parentId, taskMap, memo, new Set(visited)) + 1
+    }
+    return (memo[taskId] = score)
+}
 
 function loadTasks(){
     const showToggle = currentTab === 'tasks' || currentProject !== null
@@ -101,9 +132,19 @@ function loadTasks(){
         const list = document.getElementById("task-list")
         list.innerHTML = ""  // clear the list before re-rendering
 
+        // Pre-build task map + memo for descendants mode (also used in render loop)
+        const descendantTaskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
+        const descendantMemo = {}
+        const ancestorMemo = {}
+
         // Group tasks for the active view mode
         let taskGroups = [{ header: null, items: tasks }]
-        if (currentTaskView) {
+        if (currentTaskView === 'descendants') {
+            const sorted = [...tasks].sort((a, b) =>
+                countDescendants(b.id, descendantTaskMap, descendantMemo) - countDescendants(a.id, descendantTaskMap, descendantMemo)
+            )
+            taskGroups = [{ header: null, items: sorted }]
+        } else if (currentTaskView) {
             const buckets = new Map()
             tasks.forEach(t => {
                 let key, label
@@ -210,6 +251,34 @@ function loadTasks(){
             const nameSpan = document.createElement("span")
             nameSpan.textContent = currentTab === 'progress' ? task.name : task.name + " "
             item.appendChild(nameSpan)
+
+            if (currentTaskView === 'descendants') {
+                const desc = countDescendants(task.id, descendantTaskMap, descendantMemo)
+                const anc = countAncestors(task.id, descendantTaskMap, ancestorMemo)
+                const badge = document.createElement("span")
+                badge.className = "descendants-badge"
+                const ancSpan = document.createElement("span")
+                ancSpan.textContent = anc
+                const sep = document.createElement("span")
+                sep.textContent = "|"
+                sep.className = "descendants-sep"
+                const descSpan = document.createElement("span")
+                descSpan.textContent = desc
+                badge.appendChild(ancSpan)
+                badge.appendChild(sep)
+                badge.appendChild(descSpan)
+                item.appendChild(badge)
+
+                if (task.child_ids.length > 0) {
+                    const childList = document.createElement("span")
+                    childList.className = "descendants-children"
+                    childList.textContent = task.child_ids
+                        .map(cid => { const c = descendantTaskMap[cid]; return c ? c.name : null })
+                        .filter(Boolean)
+                        .join(", ")
+                    item.appendChild(childList)
+                }
+            }
 
             if (task.project_id && currentProject === null) {
                 const project = allProjects.find(p => p.id === task.project_id)
@@ -435,7 +504,7 @@ function switchTab(tab) {
     currentTab = tab
     currentProject = null
     currentTaskView = null
-    ;['view-priority', 'view-project', 'view-duedate'].forEach(id =>
+    ;['view-priority', 'view-project', 'view-duedate', 'view-descendants'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
     document.getElementById("tab-projects").classList.toggle("active", tab === 'projects')
@@ -450,13 +519,14 @@ function setTaskView(view) {
     document.getElementById('view-priority').classList.toggle('active', currentTaskView === 'priority')
     document.getElementById('view-project').classList.toggle('active', currentTaskView === 'project')
     document.getElementById('view-duedate').classList.toggle('active', currentTaskView === 'duedate')
+    document.getElementById('view-descendants').classList.toggle('active', currentTaskView === 'descendants')
     loadTasks()
 }
 
 function goBackToProjects() {
     currentProject = null
     currentTaskView = null
-    ;['view-priority', 'view-project', 'view-duedate'].forEach(id =>
+    ;['view-priority', 'view-project', 'view-duedate', 'view-descendants'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     loadTasks()
 }

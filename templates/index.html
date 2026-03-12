@@ -17,6 +17,7 @@
                 <h1 id="tab-title">Tasks</h1>
                 <button id="back-btn" style="display:none" onclick="goBackToProjects()"><i class="fa-solid fa-arrow-left"></i></button>
                 <div id="view-toggle" style="display:none">
+                    <button class="view-btn active" id="view-all" onclick="setTaskView('all')">All Tasks</button>
                     <button class="view-btn" id="view-priority" onclick="setTaskView('priority')">Priority</button>
                     <button class="view-btn" id="view-project" onclick="setTaskView('project')">Project</button>
                     <button class="view-btn" id="view-duedate" onclick="setTaskView('duedate')">Due Date</button>

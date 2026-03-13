@@ -1,6 +1,6 @@
-let currentTab = 'tasks'      // tracks which tab is active
-let currentProject = null     // set when viewing a project's tasks
-let currentTaskView = 'all'   // 'all' | 'priority' | 'project' | 'duedate' | 'descendants'
+let currentTab = 'tasks'        // tracks which tab is active
+let currentProject = null       // set when viewing a project's tasks
+let currentTaskView = 'all'     // 'all' | 'priority' | 'project' | 'duedate' | 'status' | 'descendants' | 'progress'
 
 // Recursively count all descendants of a task.
 // Score = sum of (child_score + 1) for each direct child, transitively.
@@ -113,19 +113,26 @@ function loadTasks(){
             return
         }
 
-        // Project detail view: show non-completed tasks for the selected project
+        // Project detail view
         if (currentProject !== null) {
-            document.getElementById("add-btn").style.display = ""
+            document.getElementById("add-btn").style.display = currentTaskView === 'progress' ? "none" : ""
             document.getElementById("add-task").style.display = "none"
             document.getElementById("back-btn").style.display = ""
             document.getElementById("tab-title").textContent = currentProject.name
+            document.getElementById("view-progress").style.display = ""
         } else {
             document.getElementById("back-btn").style.display = "none"
+            document.getElementById("view-progress").style.display = "none"
         }
 
-        // Filter tasks based on active tab; Progress tab sorted newest completion first
+        const isProgressView = currentTab === 'progress' || currentTaskView === 'progress'
+
+        // Filter tasks based on active view
         const tasks = currentProject !== null
-            ? allTasks.filter(t => t.status !== 'Completed' && t.project_id === currentProject.id)
+            ? currentTaskView === 'progress'
+                ? allTasks.filter(t => t.status === 'Completed' && t.project_id === currentProject.id)
+                    .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed))
+                : allTasks.filter(t => t.status !== 'Completed' && t.project_id === currentProject.id)
             : currentTab === 'tasks'
                 ? allTasks.filter(t => t.status !== 'Completed')
                 : allTasks
@@ -148,7 +155,9 @@ function loadTasks(){
 
         // Group tasks for the active view mode
         let taskGroups = [{ header: null, items: tasks }]
-        if (currentTaskView === 'descendants') {
+        if (isProgressView) {
+            // no grouping — progress view is always flat, date-bucketed via date headers in render loop
+        } else if (currentTaskView === 'descendants') {
             const sorted = [...tasks].sort((a, b) =>
                 countDescendants(b.id, descendantTaskMap, descendantMemo) - countDescendants(a.id, descendantTaskMap, descendantMemo)
             )
@@ -216,7 +225,7 @@ function loadTasks(){
                 return
             }
             // Insert a date header whenever the date changes (Progress tab only)
-            if (currentTab === 'progress') {
+            if (isProgressView) {
                 const taskDate = task.date_completed ? task.date_completed.split(' ')[0] : 'No Date'
                 if (taskDate !== currentDate) {
                     currentDate = taskDate
@@ -236,7 +245,7 @@ function loadTasks(){
 
             const item = document.createElement("li")
 
-            if (currentTab === 'progress') {
+            if (isProgressView) {
                 // Show completion time in 12-hour format with seconds
                 if (task.date_completed) {
                     const timeSpan = document.createElement("span")
@@ -267,10 +276,10 @@ function loadTasks(){
 
             // Use a span for the name so it can be swapped with an input on edit
             const nameSpan = document.createElement("span")
-            nameSpan.textContent = currentTab === 'progress' ? task.name : task.name + " "
+            nameSpan.textContent = isProgressView ? task.name : task.name + " "
             item.appendChild(nameSpan)
 
-            if (currentTab !== 'progress') {
+            if (!isProgressView) {
                 const desc = countDescendants(task.id, descendantTaskMap, descendantMemo)
                 const anc = countAncestors(task.id, descendantTaskMap, ancestorMemo)
                 const badge = document.createElement("span")
@@ -289,7 +298,7 @@ function loadTasks(){
 
             }
 
-            if (task.project_id && currentProject === null) {
+            if (!isProgressView && task.project_id && currentProject === null) {
                 const project = allProjects.find(p => p.id === task.project_id)
                 if (project) {
                     const projectLabel = document.createElement("span")
@@ -307,7 +316,7 @@ function loadTasks(){
                 }
             }
 
-            if (currentTab === 'tasks' || currentProject !== null) {
+            if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
                 const statusBtn = document.createElement("button")
                 statusBtn.innerHTML = '<i class="fa-solid fa-tag"></i>'
                 statusBtn.title = task.status
@@ -396,7 +405,7 @@ function loadTasks(){
                 item.appendChild(calendarBtn)
             }
 
-            if (currentTab === 'tasks' || currentProject !== null) {
+            if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
                 const editBtn = document.createElement("button")
                 editBtn.dataset.mode = "edit"
                 editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>'
@@ -473,7 +482,7 @@ function loadTasks(){
             }
 
             // --- Dependency section (Tasks tab only) ---
-            if (currentTab === 'tasks' || currentProject !== null) {
+            if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
                 const addParentBtn = document.createElement('button')
                 addParentBtn.innerHTML = '<i class="fa-solid fa-people-group"></i>'
                 addParentBtn.addEventListener('click', () => {
@@ -523,7 +532,7 @@ function switchTab(tab) {
     currentTab = tab
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants'].forEach(id =>
+    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
@@ -542,13 +551,14 @@ function setTaskView(view) {
     document.getElementById('view-duedate').classList.toggle('active', currentTaskView === 'duedate')
     document.getElementById('view-status').classList.toggle('active', currentTaskView === 'status')
     document.getElementById('view-descendants').classList.toggle('active', currentTaskView === 'descendants')
+    document.getElementById('view-progress').classList.toggle('active', currentTaskView === 'progress')
     loadTasks()
 }
 
 function goBackToProjects() {
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants'].forEach(id =>
+    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     loadTasks()

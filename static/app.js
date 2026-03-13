@@ -17,6 +17,15 @@ function countDescendants(taskId, taskMap, memo, visited = new Set()) {
     return (memo[taskId] = score)
 }
 
+// Collect all transitive ancestor IDs of a task.
+function getAllAncestorIds(taskId, taskMap, visited = new Set()) {
+    if (visited.has(taskId)) return visited
+    visited.add(taskId)
+    const task = taskMap[taskId]
+    if (task) task.parent_ids.forEach(pid => getAllAncestorIds(pid, taskMap, visited))
+    return visited
+}
+
 // Collect all transitive descendant IDs of a task (for cycle/loop prevention).
 function getAllDescendantIds(taskId, taskMap, visited = new Set()) {
     if (visited.has(taskId)) return visited
@@ -151,7 +160,6 @@ function loadTasks(){
         // Pre-build task map + memo for descendants mode (also used in render loop)
         const descendantTaskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
         const descendantMemo = {}
-        const ancestorMemo = {}
 
         // Group tasks for the active view mode
         let taskGroups = [{ header: null, items: tasks }]
@@ -280,22 +288,69 @@ function loadTasks(){
             item.appendChild(nameSpan)
 
             if (!isProgressView) {
-                const desc = countDescendants(task.id, descendantTaskMap, descendantMemo)
-                const anc = countAncestors(task.id, descendantTaskMap, ancestorMemo)
+                const ancIds = [...getAllAncestorIds(task.id, descendantTaskMap)].filter(id => id !== task.id)
+                const descIds = [...getAllDescendantIds(task.id, descendantTaskMap)].filter(id => id !== task.id)
                 const badge = document.createElement("span")
                 badge.className = "descendants-badge"
                 const ancSpan = document.createElement("span")
-                ancSpan.textContent = anc
+                ancSpan.textContent = ancIds.length
                 const sep = document.createElement("span")
                 sep.textContent = "|"
                 sep.className = "descendants-sep"
                 const descSpan = document.createElement("span")
-                descSpan.textContent = desc
+                descSpan.textContent = descIds.length
                 badge.appendChild(ancSpan)
                 badge.appendChild(sep)
                 badge.appendChild(descSpan)
-                item.appendChild(badge)
 
+                // Tooltip with ancestor/descendant names
+                const tooltip = document.createElement("div")
+                tooltip.className = "badge-tooltip"
+
+                const ancLabel = document.createElement("div")
+                ancLabel.className = "badge-tooltip-section"
+                ancLabel.textContent = "Ancestors"
+                tooltip.appendChild(ancLabel)
+                if (ancIds.length === 0) {
+                    const none = document.createElement("div")
+                    none.className = "badge-tooltip-item badge-tooltip-none"
+                    none.textContent = "none"
+                    tooltip.appendChild(none)
+                } else {
+                    ancIds.forEach(id => {
+                        const t = descendantTaskMap[id]
+                        if (!t) return
+                        const row = document.createElement("div")
+                        row.className = "badge-tooltip-item"
+                        if (task.parent_ids.includes(id)) row.classList.add("badge-tooltip-direct")
+                        row.textContent = t.name
+                        tooltip.appendChild(row)
+                    })
+                }
+
+                const descLabel = document.createElement("div")
+                descLabel.className = "badge-tooltip-section"
+                descLabel.textContent = "Descendants"
+                tooltip.appendChild(descLabel)
+                if (descIds.length === 0) {
+                    const none = document.createElement("div")
+                    none.className = "badge-tooltip-item badge-tooltip-none"
+                    none.textContent = "none"
+                    tooltip.appendChild(none)
+                } else {
+                    descIds.forEach(id => {
+                        const t = descendantTaskMap[id]
+                        if (!t) return
+                        const row = document.createElement("div")
+                        row.className = "badge-tooltip-item"
+                        if (task.child_ids.includes(id)) row.classList.add("badge-tooltip-direct")
+                        row.textContent = t.name
+                        tooltip.appendChild(row)
+                    })
+                }
+
+                badge.appendChild(tooltip)
+                item.appendChild(badge)
             }
 
             if (!isProgressView && task.project_id && currentProject === null) {

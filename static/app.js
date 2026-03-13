@@ -188,7 +188,7 @@ function loadTasks(){
             } else if (currentTaskView === 'project') {
                 entries.sort(([, av], [, bv]) => { if (av.header === 'No Project') return 1; if (bv.header === 'No Project') return -1; return av.header.localeCompare(bv.header) })
             } else if (currentTaskView === 'status') {
-                const order = ['To-Do', 'In Progress', 'Blocked', 'Waiting', 'Backlog', 'Cancelled']
+                const order = ['In Progress', 'To-Do', 'Waiting', 'Blocked', 'Backlog', 'Completed', 'Cancelled']
                 entries.sort(([a], [b]) => {
                     const ai = order.indexOf(a), bi = order.indexOf(b)
                     if (ai === -1) return 1; if (bi === -1) return -1
@@ -270,7 +270,7 @@ function loadTasks(){
             nameSpan.textContent = currentTab === 'progress' ? task.name : task.name + " "
             item.appendChild(nameSpan)
 
-            if (currentTaskView === 'descendants') {
+            if (currentTab !== 'progress') {
                 const desc = countDescendants(task.id, descendantTaskMap, descendantMemo)
                 const anc = countAncestors(task.id, descendantTaskMap, ancestorMemo)
                 const badge = document.createElement("span")

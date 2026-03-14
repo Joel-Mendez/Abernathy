@@ -36,6 +36,12 @@
             <button type="button" onclick="sendInput()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
         <button id="add-btn" onclick="toggleAddForm()"><i class="fa-solid fa-plus"></i></button>
+        <div id="task-modal-overlay" onclick="closeTaskModal()">
+            <div id="task-modal" onclick="event.stopPropagation()">
+                <button id="task-modal-close" onclick="closeTaskModal()"><i class="fa-solid fa-xmark"></i></button>
+                <div id="task-modal-content"></div>
+            </div>
+        </div>
         <script src="{{ url_for('static', filename='app.js') }}"></script>
     </body>
 </html>

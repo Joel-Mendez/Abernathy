@@ -1,6 +1,8 @@
 let currentTab = 'tasks'        // tracks which tab is active
 let currentProject = null       // set when viewing a project's tasks
 let currentTaskView = 'all'     // 'all' | 'priority' | 'project' | 'duedate' | 'status' | 'descendants' | 'progress'
+let allTasks = []
+let allProjects = []
 
 // Recursively count all descendants of a task.
 // Score = sum of (child_score + 1) for each direct child, transitively.
@@ -59,7 +61,9 @@ function loadTasks(){
         fetch("/tasks").then(r => r.json()),
         fetch("/projects").then(r => r.json())
     ])
-    .then(([allTasks, allProjects]) => {
+    .then(([fetchedTasks, fetchedProjects]) => {
+        allTasks = fetchedTasks
+        allProjects = fetchedProjects
         if (currentTab === 'projects' && currentProject === null) {
             document.getElementById("add-btn").style.display = ""
             document.getElementById("add-task").style.display = "none"
@@ -289,6 +293,8 @@ function loadTasks(){
             // Use a span for the name so it can be swapped with an input on edit
             const nameSpan = document.createElement("span")
             nameSpan.textContent = isProgressView ? task.name : task.name + " "
+            nameSpan.className = "task-name-link"
+            nameSpan.addEventListener("click", () => showTaskModal(task))
             item.appendChild(nameSpan)
 
             if (!isProgressView) {
@@ -710,5 +716,74 @@ function sendInput(){
 document.getElementById("input").addEventListener("keydown", e => {
     if (e.key === "Enter") sendInput()
 })
+
+function showTaskModal(task) {
+    const taskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
+    const content = document.getElementById("task-modal-content")
+    content.innerHTML = ""
+
+    const priorityLabels = { 1: "1 — Minimal", 2: "2 — Routine", 3: "3 — Important", 4: "4 — Urgent", 5: "5 — Critical" }
+    const effortLabels   = { 1: "1 — Trivial",  2: "2 — Small",   3: "3 — Medium",   4: "4 — Large",  5: "5 — Massive" }
+
+    const rows = [
+        ["Name",     task.name],
+        ["Status",   task.status || "—"],
+        ["Priority", task.priority ? priorityLabels[task.priority] : "—"],
+        ["Effort",   task.effort   ? effortLabels[task.effort]     : "—"],
+        ["Due Date", task.due_date ? task.due_date + (task.due_date_fixed ? "  ⚓ fixed" : "  flexible") : "—"],
+        ["Project",  allProjects.find(p => p.id === task.project_id)?.name || "—"],
+    ]
+
+    rows.forEach(([label, value]) => {
+        const row = document.createElement("div")
+        row.className = "modal-row"
+        const l = document.createElement("span")
+        l.className = "modal-label"
+        l.textContent = label
+        const v = document.createElement("span")
+        v.textContent = value
+        row.appendChild(l)
+        row.appendChild(v)
+        content.appendChild(row)
+    })
+
+    // Ancestors
+    const ancIds = [...getAllAncestorIds(task.id, taskMap)].filter(id => id !== task.id)
+    const descIds = [...getAllDescendantIds(task.id, taskMap)].filter(id => id !== task.id)
+
+    const addRelSection = (label, ids, directIds) => {
+        const row = document.createElement("div")
+        row.className = "modal-row modal-row-rel"
+        const l = document.createElement("span")
+        l.className = "modal-label"
+        l.textContent = label
+        const list = document.createElement("span")
+        if (ids.length === 0) {
+            list.textContent = "—"
+        } else {
+            ids.forEach((id, i) => {
+                const t = taskMap[id]
+                if (!t) return
+                const s = document.createElement("span")
+                s.textContent = t.name
+                if (directIds.includes(id)) s.className = "modal-direct"
+                list.appendChild(s)
+                if (i < ids.length - 1) list.appendChild(document.createTextNode(", "))
+            })
+        }
+        row.appendChild(l)
+        row.appendChild(list)
+        content.appendChild(row)
+    }
+
+    addRelSection("Ancestors",   ancIds,  task.parent_ids)
+    addRelSection("Descendants", descIds, task.child_ids)
+
+    document.getElementById("task-modal-overlay").style.display = "flex"
+}
+
+function closeTaskModal() {
+    document.getElementById("task-modal-overlay").style.display = "none"
+}
 
 loadTasks()  // load existing tasks when the page first opens

@@ -178,6 +178,10 @@ function loadTasks(){
                     key = t.priority || 0
                     const pl = { 0: 'No Priority', 1: '1 — Minimal', 2: '2 — Routine', 3: '3 — Important', 4: '4 — Urgent', 5: '5 — Critical' }
                     label = pl[key]
+                } else if (currentTaskView === 'effort') {
+                    key = t.effort || 0
+                    const el = { 0: 'No Effort', 1: '1 — Trivial', 2: '2 — Small', 3: '3 — Medium', 4: '4 — Large', 5: '5 — Massive' }
+                    label = el[key]
                 } else if (currentTaskView === 'project') {
                     const proj = allProjects.find(p => p.id === t.project_id)
                     key = proj ? proj.id : 0
@@ -200,7 +204,7 @@ function loadTasks(){
                 buckets.get(key).items.push(t)
             })
             let entries = [...buckets.entries()]
-            if (currentTaskView === 'priority') {
+            if (currentTaskView === 'priority' || currentTaskView === 'effort') {
                 entries.sort(([a], [b]) => { if (a === 0) return 1; if (b === 0) return -1; return b - a })
             } else if (currentTaskView === 'project') {
                 entries.sort(([, av], [, bv]) => { if (av.header === 'No Project') return 1; if (bv.header === 'No Project') return -1; return av.header.localeCompare(bv.header) })
@@ -436,6 +440,41 @@ function loadTasks(){
                 })
                 item.appendChild(priorityBtn)
 
+                const effortBtn = document.createElement("button")
+                effortBtn.innerHTML = '<i class="fa-solid fa-dumbbell"></i>'
+                effortBtn.title = task.effort ? `Effort ${task.effort}` : "Set effort"
+                effortBtn.addEventListener("click", () => {
+                    const existing = item.querySelector(".effort-select")
+                    if (existing) { existing.remove(); return }
+                    const effortSelect = document.createElement("select")
+                    effortSelect.className = "effort-select"
+                    const efforts = [
+                        [1, "1 — Trivial"],
+                        [2, "2 — Small"],
+                        [3, "3 — Medium"],
+                        [4, "4 — Large"],
+                        [5, "5 — Massive"]
+                    ]
+                    efforts.forEach(([val, label]) => {
+                        const opt = document.createElement("option")
+                        opt.value = val
+                        opt.textContent = label
+                        if (val === task.effort) opt.selected = true
+                        effortSelect.appendChild(opt)
+                    })
+                    effortSelect.addEventListener("change", () => {
+                        fetch("/update-effort", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: task.id, effort: parseInt(effortSelect.value)})
+                        })
+                        .then(response => response.json())
+                        .then(() => loadTasks())
+                    })
+                    item.appendChild(effortSelect)
+                })
+                item.appendChild(effortBtn)
+
                 const calendarBtn = document.createElement("button")
                 calendarBtn.innerHTML = '<i class="fa-solid fa-calendar"></i>'
                 calendarBtn.title = task.due_date || "Set due date"
@@ -587,7 +626,7 @@ function switchTab(tab) {
     currentTab = tab
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
+    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
@@ -602,6 +641,7 @@ function setTaskView(view) {
     currentTaskView = (currentTaskView === view && view !== 'all') ? 'all' : view
     document.getElementById('view-all').classList.toggle('active', currentTaskView === 'all')
     document.getElementById('view-priority').classList.toggle('active', currentTaskView === 'priority')
+    document.getElementById('view-effort').classList.toggle('active', currentTaskView === 'effort')
     document.getElementById('view-project').classList.toggle('active', currentTaskView === 'project')
     document.getElementById('view-duedate').classList.toggle('active', currentTaskView === 'duedate')
     document.getElementById('view-status').classList.toggle('active', currentTaskView === 'status')
@@ -613,7 +653,7 @@ function setTaskView(view) {
 function goBackToProjects() {
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
+    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     loadTasks()

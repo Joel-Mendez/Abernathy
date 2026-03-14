@@ -50,6 +50,12 @@ def update_priority():
     task.update_task_priority(data.get("id"), data.get("priority"))
     return jsonify({"ok": True})
 
+@app.route('/update-effort', methods=['POST'])
+def update_effort():
+    data = request.get_json()
+    task.update_task_effort(data.get("id"), data.get("effort"))
+    return jsonify({"ok": True})
+
 @app.route('/add-dependency', methods=['POST'])
 def add_dependency():
     data = request.get_json()

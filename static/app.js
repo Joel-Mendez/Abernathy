@@ -480,7 +480,7 @@ function loadTasks(){
                 calendarBtn.title = task.due_date || "Set due date"
                 calendarBtn.addEventListener("click", () => {
                     const existing = item.querySelector(".due-date-input")
-                    if (existing) { existing.remove(); return }
+                    if (existing) { existing.remove(); item.querySelector(".due-date-fixed-btn")?.remove(); return }
                     const dueDateInput = document.createElement("input")
                     dueDateInput.type = "date"
                     dueDateInput.className = "due-date-input"
@@ -495,6 +495,23 @@ function loadTasks(){
                         .then(() => loadTasks())
                     })
                     item.appendChild(dueDateInput)
+
+                    const anchorBtn = document.createElement("button")
+                    anchorBtn.className = "due-date-fixed-btn"
+                    anchorBtn.innerHTML = '<i class="fa-solid fa-anchor"></i>'
+                    anchorBtn.title = task.due_date_fixed ? "Fixed date (click to make flexible)" : "Flexible date (click to fix)"
+                    anchorBtn.classList.toggle("due-date-fixed-active", !!task.due_date_fixed)
+                    anchorBtn.addEventListener("click", () => {
+                        const newFixed = !task.due_date_fixed
+                        fetch("/update-due-date-fixed", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({id: task.id, fixed: newFixed})
+                        })
+                        .then(response => response.json())
+                        .then(() => loadTasks())
+                    })
+                    item.appendChild(anchorBtn)
                 })
                 item.appendChild(calendarBtn)
             }

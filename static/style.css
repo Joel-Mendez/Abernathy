@@ -114,6 +114,10 @@ body {
     color: #4a90d9;
 }
 
+.due-date-fixed-active {
+    color: #4a90d9;
+}
+
 .descendants-sep {
     opacity: 0.35;
     font-size: 10px;

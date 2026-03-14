@@ -56,6 +56,12 @@ def update_effort():
     task.update_task_effort(data.get("id"), data.get("effort"))
     return jsonify({"ok": True})
 
+@app.route('/update-due-date-fixed', methods=['POST'])
+def update_due_date_fixed():
+    data = request.get_json()
+    task.update_task_due_date_fixed(data.get("id"), data.get("fixed"))
+    return jsonify({"ok": True})
+
 @app.route('/add-dependency', methods=['POST'])
 def add_dependency():
     data = request.get_json()

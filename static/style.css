@@ -49,10 +49,58 @@ body {
     margin-bottom: 8px;
 }
 
-#view-toggle {
-    display: flex;
-    gap: 8px;
+#sort-menu-wrap {
+    position: relative;
+    display: inline-block;
     margin-bottom: 12px;
+}
+
+#sort-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1.5px solid #aaa;
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-family: 'Inconsolata', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    color: #333;
+}
+
+#sort-btn:hover {
+    border-color: #555;
+}
+
+#sort-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+    min-width: 140px;
+    padding: 4px 0;
+}
+
+.sort-option {
+    padding: 7px 16px;
+    font-family: 'Inconsolata', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    color: #333;
+}
+
+.sort-option:hover {
+    background: #f5f5f5;
+}
+
+.sort-option.active {
+    color: #111;
+    font-weight: bold;
 }
 
 .descendants-badge {
@@ -325,22 +373,6 @@ body {
     margin-right: 6px;
 }
 
-.view-btn {
-    background: none;
-    border: 1.5px solid #aaa;
-    border-radius: 999px;
-    padding: 4px 14px;
-    font-family: 'Inconsolata', monospace;
-    font-size: 14px;
-    cursor: pointer;
-    color: #333;
-}
-
-.view-btn.active {
-    background: #111;
-    border-color: #111;
-    color: #fff;
-}
 
 #content {
     padding: 16px;

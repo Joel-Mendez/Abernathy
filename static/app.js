@@ -55,8 +55,8 @@ function countAncestors(taskId, taskMap, memo, visited = new Set()) {
 
 function loadTasks(){
     const showToggle = currentTab === 'tasks' || currentProject !== null
-    document.getElementById("view-toggle").style.display = showToggle ? "" : "none"
-    document.getElementById("view-project").style.display = currentProject !== null ? "none" : ""
+    document.getElementById("sort-menu-wrap").style.display = showToggle ? "" : "none"
+    document.getElementById("sort-option-project").style.display = currentProject !== null ? "none" : ""
     Promise.all([
         fetch("/tasks").then(r => r.json()),
         fetch("/projects").then(r => r.json())
@@ -132,10 +132,10 @@ function loadTasks(){
             document.getElementById("add-task").style.display = "none"
             document.getElementById("back-btn").style.display = ""
             document.getElementById("tab-title").textContent = currentProject.name
-            document.getElementById("view-progress").style.display = ""
+            document.getElementById("sort-option-progress").style.display = ""
         } else {
             document.getElementById("back-btn").style.display = "none"
-            document.getElementById("view-progress").style.display = "none"
+            document.getElementById("sort-option-progress").style.display = "none"
         }
 
         const isProgressView = currentTab === 'progress' || currentTaskView === 'progress'
@@ -420,41 +420,50 @@ function loadTasks(){
     })
 }
 
+const viewLabels = { all: 'All Tasks', priority: 'Priority', project: 'Project', duedate: 'Due Date', status: 'Status', descendants: 'Descendants', effort: 'Effort', pressure: 'Pressure', progress: 'Progress' }
+
+function updateSortUI() {
+    document.querySelectorAll('.sort-option').forEach(el => {
+        el.classList.toggle('active', el.dataset.view === currentTaskView)
+    })
+    document.getElementById('sort-label').textContent = viewLabels[currentTaskView] || 'All Tasks'
+}
+
+function toggleSortMenu() {
+    const menu = document.getElementById('sort-menu')
+    menu.style.display = menu.style.display === 'none' ? '' : 'none'
+}
+
+document.addEventListener('click', e => {
+    const wrap = document.getElementById('sort-menu-wrap')
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('sort-menu').style.display = 'none'
+    }
+})
+
 function switchTab(tab) {
     currentTab = tab
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-pressure', 'view-progress'].forEach(id =>
-        document.getElementById(id).classList.remove('active'))
-    document.getElementById('view-all').classList.add('active')
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
     document.getElementById("tab-projects").classList.toggle("active", tab === 'projects')
     document.getElementById("tab-progress").classList.toggle("active", tab === 'progress')
-    const titles = { tasks: "Tasks", projects: "Projects", progress: "Progress" }
-    document.getElementById("tab-title").textContent = titles[tab]
+    document.getElementById("tab-title").textContent = { tasks: "Tasks", projects: "Projects", progress: "Progress" }[tab]
+    updateSortUI()
     loadTasks()
 }
 
 function setTaskView(view) {
     currentTaskView = (currentTaskView === view && view !== 'all') ? 'all' : view
-    document.getElementById('view-all').classList.toggle('active', currentTaskView === 'all')
-    document.getElementById('view-priority').classList.toggle('active', currentTaskView === 'priority')
-    document.getElementById('view-effort').classList.toggle('active', currentTaskView === 'effort')
-    document.getElementById('view-project').classList.toggle('active', currentTaskView === 'project')
-    document.getElementById('view-duedate').classList.toggle('active', currentTaskView === 'duedate')
-    document.getElementById('view-status').classList.toggle('active', currentTaskView === 'status')
-    document.getElementById('view-descendants').classList.toggle('active', currentTaskView === 'descendants')
-    document.getElementById('view-pressure').classList.toggle('active', currentTaskView === 'pressure')
-    document.getElementById('view-progress').classList.toggle('active', currentTaskView === 'progress')
+    document.getElementById('sort-menu').style.display = 'none'
+    updateSortUI()
     loadTasks()
 }
 
 function goBackToProjects() {
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-pressure', 'view-progress'].forEach(id =>
-        document.getElementById(id).classList.remove('active'))
-    document.getElementById('view-all').classList.add('active')
+    updateSortUI()
     loadTasks()
 }
 

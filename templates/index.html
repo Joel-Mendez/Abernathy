@@ -18,16 +18,22 @@
             <div id="content">
                 <h1 id="tab-title">Tasks</h1>
                 <button id="back-btn" style="display:none" onclick="goBackToProjects()"><i class="fa-solid fa-arrow-left"></i></button>
-                <div id="view-toggle" style="display:none">
-                    <button class="view-btn active" id="view-all" onclick="setTaskView('all')">All Tasks</button>
-                    <button class="view-btn" id="view-priority" onclick="setTaskView('priority')">Priority</button>
-                    <button class="view-btn" id="view-project" onclick="setTaskView('project')">Project</button>
-                    <button class="view-btn" id="view-duedate" onclick="setTaskView('duedate')">Due Date</button>
-                    <button class="view-btn" id="view-status" onclick="setTaskView('status')">Status</button>
-                    <button class="view-btn" id="view-descendants" onclick="setTaskView('descendants')">Descendants</button>
-                    <button class="view-btn" id="view-effort" onclick="setTaskView('effort')">Effort</button>
-                    <button class="view-btn" id="view-pressure" onclick="setTaskView('pressure')">Pressure</button>
-                    <button class="view-btn" id="view-progress" style="display:none" onclick="setTaskView('progress')">Progress</button>
+                <div id="sort-menu-wrap" style="display:none">
+                    <button id="sort-btn" onclick="toggleSortMenu()">
+                        <i class="fa-solid fa-arrow-up-wide-short"></i>
+                        <span id="sort-label">All Tasks</span>
+                    </button>
+                    <div id="sort-menu" style="display:none">
+                        <div class="sort-option active" data-view="all"         onclick="setTaskView('all')">All Tasks</div>
+                        <div class="sort-option"        data-view="priority"    onclick="setTaskView('priority')">Priority</div>
+                        <div class="sort-option"        data-view="project"     id="sort-option-project" onclick="setTaskView('project')">Project</div>
+                        <div class="sort-option"        data-view="duedate"     onclick="setTaskView('duedate')">Due Date</div>
+                        <div class="sort-option"        data-view="status"      onclick="setTaskView('status')">Status</div>
+                        <div class="sort-option"        data-view="descendants" onclick="setTaskView('descendants')">Descendants</div>
+                        <div class="sort-option"        data-view="effort"      onclick="setTaskView('effort')">Effort</div>
+                        <div class="sort-option"        data-view="pressure"    onclick="setTaskView('pressure')">Pressure</div>
+                        <div class="sort-option"        data-view="progress"    id="sort-option-progress" style="display:none" onclick="setTaskView('progress')">Progress</div>
+                    </div>
                 </div>
                 <ul id="task-list"></ul>
             </div>

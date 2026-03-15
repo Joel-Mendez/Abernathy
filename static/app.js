@@ -414,20 +414,6 @@ function loadTasks(){
             }
 
 
-            if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
-                const deleteBtn = document.createElement("button")
-                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'
-                deleteBtn.addEventListener("click", () => {
-                    fetch("/delete-task", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({id: task.id})
-                    })
-                    .then(response => response.json())
-                    .then(() => loadTasks())  // refresh the list after deletion
-                })
-                item.appendChild(deleteBtn)
-            }
 
             list.appendChild(item)
         })
@@ -622,6 +608,27 @@ function showTaskModal(task) {
         content.appendChild(row)
     })
 
+    // Notes
+    const notesRow = document.createElement("div")
+    notesRow.className = "modal-row modal-row-rel"
+    const notesLabel = document.createElement("span")
+    notesLabel.className = "modal-label"
+    notesLabel.innerHTML = '<i class="fa-solid fa-note-sticky"></i> Notes'
+    const notesArea = document.createElement("textarea")
+    notesArea.className = "modal-notes"
+    notesArea.value = task.notes || ""
+    notesArea.placeholder = "Add notes..."
+    notesArea.addEventListener("change", () => {
+        fetch("/update-notes", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id: task.id, notes: notesArea.value})
+        }).then(r => r.json())
+    })
+    notesRow.appendChild(notesLabel)
+    notesRow.appendChild(notesArea)
+    content.appendChild(notesRow)
+
     // Ancestors
     const ancIds = [...getAllAncestorIds(task.id, taskMap)]
         .filter(id => id !== task.id)
@@ -718,6 +725,18 @@ function showTaskModal(task) {
 
     addRelSection("fa-people-group", "Ancestors",   ancIds,  task.parent_ids, "parent")
     addRelSection("fa-child",        "Descendants", descIds, task.child_ids,  "child")
+
+    const deleteBtn = document.createElement("button")
+    deleteBtn.className = "modal-delete-btn"
+    deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Delete task'
+    deleteBtn.addEventListener("click", () => {
+        fetch("/delete-task", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id: task.id})
+        }).then(r => r.json()).then(() => { closeTaskModal(); loadTasks() })
+    })
+    content.appendChild(deleteBtn)
 
     document.getElementById("task-modal-overlay").style.display = "flex"
 }

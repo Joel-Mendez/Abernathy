@@ -13,6 +13,8 @@ body {
     flex-direction: column;
     align-items: center;
     width: 64px;
+    min-width: 64px;
+    flex-shrink: 0;
     padding: 60px 0;
     border-right: 1px solid #ccc;
     gap: 8px;
@@ -260,6 +262,45 @@ body {
 .modal-dep-select {
     font-size: 12px;
     opacity: 0.6;
+}
+
+.modal-notes {
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-family: 'Inconsolata', monospace;
+    font-size: 13px;
+    flex: 1;
+    outline: none;
+    padding: 2px;
+    resize: vertical;
+    min-height: 56px;
+}
+
+.modal-notes:focus {
+    border-bottom-color: #4a90d9;
+}
+
+.modal-notes::placeholder {
+    color: rgba(255,255,255,0.25);
+}
+
+.modal-delete-btn {
+    margin-top: 16px;
+    background: none;
+    border: 1px solid rgba(192, 57, 43, 0.4);
+    color: #c0392b;
+    font-family: 'Inconsolata', monospace;
+    font-size: 13px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.modal-delete-btn:hover {
+    background: rgba(192, 57, 43, 0.15);
 }
 
 .pressure-badge {

@@ -72,6 +72,13 @@ def init_db():
     except sqlite3.OperationalError:
         pass  # column already exists
 
+    # Migration: add notes column if this db was created before it existed
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN notes TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
     # Join table for many-to-many parent/child relationships
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS task_dependencies (
@@ -165,7 +172,7 @@ def get_tasks():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT id, name, status, date_completed, priority, due_date, due_date_fixed, project_id, effort FROM tasks')
+    cursor.execute('SELECT id, name, status, date_completed, priority, due_date, due_date_fixed, project_id, effort, notes FROM tasks')
     rows = cursor.fetchall()
     tasks = {row['id']: dict(row) for row in rows}
     for t in tasks.values():
@@ -265,6 +272,13 @@ def update_task_effort(task_id, effort):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET effort = ? WHERE id = ?', (effort, task_id))
+    conn.commit()
+    conn.close()
+
+def update_task_notes(task_id, notes):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tasks SET notes = ? WHERE id = ?', (notes, task_id))
     conn.commit()
     conn.close()
 

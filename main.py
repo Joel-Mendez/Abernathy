@@ -97,6 +97,12 @@ def delete_project():
     task.delete_project(data.get("id"))
     return jsonify({"ok": True})
 
+@app.route('/update-notes', methods=['POST'])
+def update_notes():
+    data = request.get_json()
+    task.update_task_notes(data.get("id"), data.get("notes"))
+    return jsonify({"ok": True})
+
 @app.route('/update-project', methods=['POST'])
 def update_project():
     data = request.get_json()

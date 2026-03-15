@@ -294,11 +294,22 @@ function loadTasks(){
             const nameSpan = document.createElement("span")
             nameSpan.textContent = isProgressView ? task.name : task.name + " "
             nameSpan.className = "task-name-link"
+            const statusColors = {
+                'In Progress': '#4a90d9',
+                'Waiting':     '#e8943a',
+                'Blocked':     '#bbb',
+                'Backlog':     '#9b7fd4',
+                'Completed':   '#5aad6f',
+                'Cancelled':   '#c0392b',
+            }
+            if (statusColors[task.status]) nameSpan.style.color = statusColors[task.status]
             nameSpan.addEventListener("click", () => showTaskModal(task))
             item.appendChild(nameSpan)
 
             if (!isProgressView) {
-                const ancIds = [...getAllAncestorIds(task.id, descendantTaskMap)].filter(id => id !== task.id)
+                const ancIds = [...getAllAncestorIds(task.id, descendantTaskMap)]
+                    .filter(id => id !== task.id)
+                    .filter(id => { const t = descendantTaskMap[id]; return t && !['Completed', 'Cancelled'].includes(t.status) })
                 const descIds = [...getAllDescendantIds(task.id, descendantTaskMap)].filter(id => id !== task.id)
                 const badge = document.createElement("span")
                 badge.className = "descendants-badge"
@@ -602,6 +613,7 @@ function loadTasks(){
             if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
                 const addParentBtn = document.createElement('button')
                 addParentBtn.innerHTML = '<i class="fa-solid fa-people-group"></i>'
+                addParentBtn.title = "Add parent"
                 addParentBtn.addEventListener('click', () => {
                     const existing = item.querySelector('.parent-select')
                     if (existing) { existing.remove(); return }
@@ -638,6 +650,46 @@ function loadTasks(){
                     item.appendChild(addParentSelect)
                 })
                 item.appendChild(addParentBtn)
+
+                const addChildBtn = document.createElement('button')
+                addChildBtn.innerHTML = '<i class="fa-solid fa-child"></i>'
+                addChildBtn.title = "Add child"
+                addChildBtn.addEventListener('click', () => {
+                    const existing = item.querySelector('.child-select')
+                    if (existing) { existing.remove(); return }
+                    const addChildSelect = document.createElement('select')
+                    addChildSelect.className = 'child-select'
+                    const placeholder = document.createElement('option')
+                    placeholder.value = ''
+                    placeholder.textContent = '— select child —'
+                    placeholder.disabled = true
+                    placeholder.selected = true
+                    addChildSelect.appendChild(placeholder)
+                    const taskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
+                    const ancestorIds = getAllAncestorIds(task.id, taskMap)
+                    allTasks.forEach(other => {
+                        if (other.id === task.id) return
+                        if (task.child_ids.includes(other.id)) return
+                        if (ancestorIds.has(other.id)) return
+                        if (['Completed', 'Cancelled'].includes(other.status)) return
+                        const opt = document.createElement('option')
+                        opt.value = other.id
+                        opt.textContent = other.name
+                        addChildSelect.appendChild(opt)
+                    })
+                    addChildSelect.addEventListener('change', () => {
+                        const selectedChildId = parseInt(addChildSelect.value)
+                        fetch('/add-dependency', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({parent_id: task.id, child_id: selectedChildId})
+                        })
+                        .then(r => r.json())
+                        .then(() => loadTasks())
+                    })
+                    item.appendChild(addChildSelect)
+                })
+                item.appendChild(addChildBtn)
             }
 
             list.appendChild(item)
@@ -748,7 +800,9 @@ function showTaskModal(task) {
     })
 
     // Ancestors
-    const ancIds = [...getAllAncestorIds(task.id, taskMap)].filter(id => id !== task.id)
+    const ancIds = [...getAllAncestorIds(task.id, taskMap)]
+        .filter(id => id !== task.id)
+        .filter(id => { const t = taskMap[id]; return t && !['Completed', 'Cancelled'].includes(t.status) })
     const descIds = [...getAllDescendantIds(task.id, taskMap)].filter(id => id !== task.id)
 
     const addRelSection = (label, ids, directIds) => {

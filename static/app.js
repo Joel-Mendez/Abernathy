@@ -534,32 +534,6 @@ function loadTasks(){
             }
 
             if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
-                const editBtn = document.createElement("button")
-                editBtn.dataset.mode = "edit"
-                editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>'
-                editBtn.addEventListener("click", () => {
-                    if (editBtn.dataset.mode === "edit") {
-                        // Switch to edit mode: replace span with a text input
-                        const input = document.createElement("input")
-                        input.type = "text"
-                        input.value = nameSpan.textContent.trim()
-                        item.replaceChild(input, nameSpan)
-                        editBtn.dataset.mode = "save"
-                        editBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
-                    } else {
-                        // Save mode: send updated name to backend
-                        const input = item.querySelector("input[type='text']")  // must specify type to avoid matching the checkbox
-                        fetch("/update-task", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: task.id, name: input.value})
-                        })
-                        .then(response => response.json())
-                        .then(() => loadTasks())  // refresh the list after saving
-                    }
-                })
-                item.appendChild(editBtn)
-
                 const folderBtn = document.createElement("button")
                 folderBtn.innerHTML = '<i class="fa-solid fa-folder"></i>'
                 folderBtn.title = task.project_id
@@ -778,24 +752,43 @@ function showTaskModal(task) {
     const effortLabels   = { 1: "1 — Trivial",  2: "2 — Small",   3: "3 — Medium",   4: "4 — Large",  5: "5 — Massive" }
 
     const rows = [
-        ["Name",     task.name],
-        ["Status",   task.status || "—"],
-        ["Priority", task.priority ? priorityLabels[task.priority] : "—"],
-        ["Effort",   task.effort   ? effortLabels[task.effort]     : "—"],
-        ["Due Date", task.due_date ? task.due_date + (task.due_date_fixed ? "  ⚓ fixed" : "  flexible") : "—"],
-        ["Project",  allProjects.find(p => p.id === task.project_id)?.name || "—"],
+        ["fa-pen-to-square", "Name",     task.name],
+        ["fa-tag",           "Status",   task.status || "—"],
+        ["fa-exclamation",   "Priority", task.priority ? priorityLabels[task.priority] : "—"],
+        ["fa-dumbbell",      "Effort",   task.effort   ? effortLabels[task.effort]     : "—"],
+        ["fa-calendar",      "Due Date", task.due_date ? task.due_date + (task.due_date_fixed ? "  ⚓ fixed" : "  flexible") : "—"],
+        ["fa-folder",        "Project",  allProjects.find(p => p.id === task.project_id)?.name || "—"],
     ]
 
-    rows.forEach(([label, value]) => {
+    rows.forEach(([icon, label, value]) => {
         const row = document.createElement("div")
         row.className = "modal-row"
         const l = document.createElement("span")
         l.className = "modal-label"
-        l.textContent = label
-        const v = document.createElement("span")
-        v.textContent = value
+        l.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`
         row.appendChild(l)
-        row.appendChild(v)
+
+        if (label === "Name") {
+            const input = document.createElement("input")
+            input.type = "text"
+            input.className = "modal-name-input"
+            input.value = value
+            input.addEventListener("change", () => {
+                fetch("/update-task", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id, name: input.value})
+                })
+                .then(r => r.json())
+                .then(() => loadTasks())
+            })
+            row.appendChild(input)
+        } else {
+            const v = document.createElement("span")
+            v.textContent = value
+            row.appendChild(v)
+        }
+
         content.appendChild(row)
     })
 
@@ -805,12 +798,12 @@ function showTaskModal(task) {
         .filter(id => { const t = taskMap[id]; return t && !['Completed', 'Cancelled'].includes(t.status) })
     const descIds = [...getAllDescendantIds(task.id, taskMap)].filter(id => id !== task.id)
 
-    const addRelSection = (label, ids, directIds) => {
+    const addRelSection = (icon, label, ids, directIds) => {
         const row = document.createElement("div")
         row.className = "modal-row modal-row-rel"
         const l = document.createElement("span")
         l.className = "modal-label"
-        l.textContent = label
+        l.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`
         const list = document.createElement("span")
         if (ids.length === 0) {
             list.textContent = "—"
@@ -830,8 +823,8 @@ function showTaskModal(task) {
         content.appendChild(row)
     }
 
-    addRelSection("Ancestors",   ancIds,  task.parent_ids)
-    addRelSection("Descendants", descIds, task.child_ids)
+    addRelSection("fa-people-group", "Ancestors",   ancIds,  task.parent_ids)
+    addRelSection("fa-child",        "Descendants", descIds, task.child_ids)
 
     document.getElementById("task-modal-overlay").style.display = "flex"
 }

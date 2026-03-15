@@ -1,13 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 import task
 
-app = Flask(__name__)
+app = Flask(__name__) # Create application
 
-@app.route('/') 
+@app.route('/') # Route for the home page
 def home():
-    task.init_db()
     return render_template('index.html')
 
+# Task Routes
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     return jsonify(task.get_tasks())
@@ -80,6 +80,13 @@ def update_task_project():
     task.update_task_project(data.get("id"), data.get("project_id"))
     return jsonify({"ok": True})
 
+@app.route('/update-notes', methods=['POST'])
+def update_notes():
+    data = request.get_json()
+    task.update_task_notes(data.get("id"), data.get("notes"))
+    return jsonify({"ok": True})
+
+# Project Routes
 @app.route('/projects', methods=['GET'])
 def get_projects():
     return jsonify(task.get_projects())
@@ -97,12 +104,6 @@ def delete_project():
     task.delete_project(data.get("id"))
     return jsonify({"ok": True})
 
-@app.route('/update-notes', methods=['POST'])
-def update_notes():
-    data = request.get_json()
-    task.update_task_notes(data.get("id"), data.get("notes"))
-    return jsonify({"ok": True})
-
 @app.route('/update-project', methods=['POST'])
 def update_project():
     data = request.get_json()
@@ -110,4 +111,5 @@ def update_project():
     return jsonify({"ok": True})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    task.init_db() 
+    app.run(debug=False)

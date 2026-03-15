@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_PATH = 'abernathy.db'
+DB_PATH = 'abernathy.db' # Make this user specific in the future
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH)

@@ -3,6 +3,7 @@ let currentProject = null       // set when viewing a project's tasks
 let currentTaskView = 'all'     // 'all' | 'priority' | 'project' | 'duedate' | 'status' | 'descendants' | 'progress'
 let allTasks = []
 let allProjects = []
+let sandboxZoom = 1.0
 
 // Recursively count all descendants of a task.
 // Score = sum of (child_score + 1) for each direct child, transitively.
@@ -164,6 +165,193 @@ function loadTasks(){
         // Pre-build task map + memo for descendants mode (also used in render loop)
         const descendantTaskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
         const descendantMemo = {}
+
+        // Tree view — render directly and skip normal render loop
+        if (currentTaskView === 'tree') {
+            const taskIds = new Set(tasks.map(t => t.id))
+            const roots = tasks
+                .filter(t => t.parent_ids.filter(pid => taskIds.has(pid)).length === 0)
+                .sort((a, b) => a.name.localeCompare(b.name))
+            const visited = new Set()
+            const treeStatusColors = {
+                'In Progress': '#4a90d9', 'Waiting': '#e8943a', 'Blocked': '#bbb',
+                'Backlog': '#9b7fd4', 'Completed': '#5aad6f', 'Cancelled': '#c0392b',
+            }
+            const renderNode = (task, depth, isLast, parentPrefix) => {
+                if (visited.has(task.id)) return
+                visited.add(task.id)
+                const connector   = depth === 0 ? '' : (isLast ? '└─ ' : '├─ ')
+                const childPrefix = depth === 0 ? '' : parentPrefix + (isLast ? '   ' : '│  ')
+                const item = document.createElement("li")
+                item.className = "tree-node"
+                if (depth > 0) {
+                    const pre = document.createElement("span")
+                    pre.className = "tree-prefix"
+                    pre.textContent = parentPrefix + connector
+                    item.appendChild(pre)
+                }
+                const nameSpan = document.createElement("span")
+                nameSpan.textContent = task.name
+                nameSpan.className = "task-name-link"
+                if (treeStatusColors[task.status]) nameSpan.style.color = treeStatusColors[task.status]
+                nameSpan.addEventListener("click", () => showTaskModal(task))
+                item.appendChild(nameSpan)
+                list.appendChild(item)
+                const children = task.child_ids
+                    .map(cid => descendantTaskMap[cid])
+                    .filter(c => c && taskIds.has(c.id) && !visited.has(c.id))
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                children.forEach((child, i) => renderNode(child, depth + 1, i === children.length - 1, childPrefix))
+            }
+            roots.forEach((root, i) => renderNode(root, 0, i === roots.length - 1, ''))
+            return
+        }
+
+        // Sandbox view — visual family tree of all tasks (including completed)
+        if (currentTaskView === 'sandbox') {
+            const sandboxTasks = (currentProject !== null
+                ? allTasks.filter(t => t.project_id === currentProject.id)
+                : allTasks
+            ).filter(t => !['Completed', 'Cancelled'].includes(t.status))
+            const sandboxIds = new Set(sandboxTasks.map(t => t.id))
+
+            // Assign depth = longest path from any root
+            const depthMap = new Map()
+            const assignDepth = (taskId, depth, visiting = new Set()) => {
+                if (visiting.has(taskId)) return  // cycle guard
+                if ((depthMap.get(taskId) ?? -1) >= depth) return
+                depthMap.set(taskId, depth)
+                const t = descendantTaskMap[taskId]
+                if (t) {
+                    visiting.add(taskId)
+                    t.child_ids.forEach(cid => assignDepth(cid, depth + 1, new Set(visiting)))
+                }
+            }
+            sandboxTasks
+                .filter(t => t.parent_ids.filter(pid => sandboxIds.has(pid)).length === 0)
+                .forEach(r => assignDepth(r.id, 0))
+            sandboxTasks.forEach(t => { if (!depthMap.has(t.id)) depthMap.set(t.id, 0) })
+
+            // Group by depth
+            const byDepth = new Map()
+            sandboxTasks.forEach(t => {
+                const d = depthMap.get(t.id) ?? 0
+                if (!byDepth.has(d)) byDepth.set(d, [])
+                byDepth.get(d).push(t)
+            })
+
+            const NODE_W = 80, NODE_H = 80, H_GAP = 24, V_GAP = 64
+            const depths = [...byDepth.keys()].sort((a, b) => a - b)
+            const maxRowLen = Math.max(...depths.map(d => byDepth.get(d).length), 1)
+            const totalW = Math.max(maxRowLen * (NODE_W + H_GAP) - H_GAP, 300)
+            const totalH = depths.length * (NODE_H + V_GAP) - V_GAP + 24
+
+            // Compute positions
+            const posMap = new Map()
+            depths.forEach(d => {
+                const row = byDepth.get(d)
+                const rowW = row.length * (NODE_W + H_GAP) - H_GAP
+                const startX = (totalW - rowW) / 2
+                row.forEach((t, i) => {
+                    posMap.set(t.id, { x: startX + i * (NODE_W + H_GAP), y: d * (NODE_H + V_GAP) + 8 })
+                })
+            })
+
+            const container = document.createElement("div")
+            container.style.cssText = `position:relative;width:${totalW}px;height:${totalH}px;min-width:100%`
+
+            // SVG edges
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+            svg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none"
+            sandboxTasks.forEach(t => {
+                const p = posMap.get(t.id)
+                if (!p) return
+                t.child_ids.forEach(cid => {
+                    const c = posMap.get(cid)
+                    if (!c) return
+                    const x1 = p.x + NODE_W / 2, y1 = p.y + NODE_H
+                    const x2 = c.x + NODE_W / 2, y2 = c.y
+                    const cy = (y1 + y2) / 2
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path")
+                    path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`)
+                    path.setAttribute("fill", "none")
+                    path.setAttribute("stroke", "#ccc")
+                    path.setAttribute("stroke-width", "1.5")
+                    svg.appendChild(path)
+                })
+            })
+            container.appendChild(svg)
+
+            const sbColors = { 'In Progress': '#4a90d9', 'Waiting': '#e8943a', 'Blocked': '#bbb', 'Backlog': '#9b7fd4', 'Completed': '#5aad6f', 'Cancelled': '#c0392b' }
+            sandboxTasks.forEach(t => {
+                const pos = posMap.get(t.id)
+                if (!pos) return
+                const node = document.createElement("div")
+                node.className = "sandbox-node"
+                node.style.left = pos.x + "px"
+                node.style.top = pos.y + "px"
+                node.style.borderColor = sbColors[t.status] || '#ddd'
+                node.textContent = t.name
+                node.addEventListener("click", () => showTaskModal(t))
+                container.appendChild(node)
+            })
+
+            // Zoom controls
+            container.style.transformOrigin = "top left"
+            container.style.transform = `scale(${sandboxZoom})`
+            container.style.position = "absolute"
+            container.style.top = "0"
+            container.style.left = "0"
+
+            const sizer = document.createElement("div")
+            sizer.style.position = "relative"
+            sizer.style.width = Math.round(totalW * sandboxZoom) + "px"
+            sizer.style.height = Math.round(totalH * sandboxZoom) + "px"
+            sizer.appendChild(container)
+
+            const scrollArea = document.createElement("div")
+            scrollArea.style.cssText = "overflow:auto;height:calc(100vh - 180px)"
+            scrollArea.appendChild(sizer)
+
+            const applyZoom = () => {
+                container.style.transform = `scale(${sandboxZoom})`
+                sizer.style.width = Math.round(totalW * sandboxZoom) + "px"
+                sizer.style.height = Math.round(totalH * sandboxZoom) + "px"
+                zoomLabel.textContent = Math.round(sandboxZoom * 100) + "%"
+            }
+
+
+            const btnStyle = "background:none;border:1px solid #ccc;border-radius:4px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px"
+            const zoomOutBtn = document.createElement("button")
+            zoomOutBtn.innerHTML = '<i class="fa-solid fa-minus"></i>'
+            zoomOutBtn.style.cssText = btnStyle
+            zoomOutBtn.addEventListener("click", () => { sandboxZoom = Math.max(0.25, sandboxZoom - 0.15); applyZoom() })
+
+            const zoomLabel = document.createElement("span")
+            zoomLabel.style.cssText = "font-size:12px;color:#555;min-width:38px;text-align:center"
+            zoomLabel.textContent = Math.round(sandboxZoom * 100) + "%"
+
+            const zoomInBtn = document.createElement("button")
+            zoomInBtn.innerHTML = '<i class="fa-solid fa-plus"></i>'
+            zoomInBtn.style.cssText = btnStyle
+            zoomInBtn.addEventListener("click", () => { sandboxZoom = Math.min(2.5, sandboxZoom + 0.15); applyZoom() })
+
+            const zoomBar = document.createElement("div")
+            zoomBar.style.cssText = "display:flex;align-items:center;gap:4px;margin-bottom:8px"
+            zoomBar.appendChild(zoomOutBtn)
+            zoomBar.appendChild(zoomLabel)
+            zoomBar.appendChild(zoomInBtn)
+
+            const outerDiv = document.createElement("div")
+            outerDiv.appendChild(zoomBar)
+            outerDiv.appendChild(scrollArea)
+
+            const wrapper = document.createElement("li")
+            wrapper.style.cssText = "list-style:none;padding:8px 0"
+            wrapper.appendChild(outerDiv)
+            list.appendChild(wrapper)
+            return
+        }
 
         // Group tasks for the active view mode
         let taskGroups = [{ header: null, items: tasks }]
@@ -420,7 +608,7 @@ function loadTasks(){
     })
 }
 
-const viewLabels = { all: 'All Tasks', priority: 'Priority', project: 'Project', duedate: 'Due Date', status: 'Status', descendants: 'Descendants', effort: 'Effort', pressure: 'Pressure', progress: 'Progress' }
+const viewLabels = { all: 'All Tasks', priority: 'Priority', project: 'Project', duedate: 'Due Date', status: 'Status', descendants: 'Descendants', effort: 'Effort', pressure: 'Pressure', tree: 'Tree', sandbox: 'Sandbox', progress: 'Progress' }
 
 function updateSortUI() {
     document.querySelectorAll('.sort-option').forEach(el => {
@@ -500,6 +688,16 @@ function sendInput(){
 
 document.getElementById("input").addEventListener("keydown", e => {
     if (e.key === "Enter") sendInput()
+})
+
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeTaskModal()
+    const tag = document.activeElement.tagName
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
+    if (e.key === "n" && (currentTab === "tasks" || currentProject !== null)) {
+        e.preventDefault()
+        toggleAddForm()
+    }
 })
 
 function showTaskModal(task) {

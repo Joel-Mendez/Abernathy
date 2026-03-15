@@ -213,6 +213,22 @@ body {
     border-bottom-color: #4a90d9;
 }
 
+.modal-select {
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-family: 'Inconsolata', monospace;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+.modal-select:focus {
+    border-bottom-color: #4a90d9;
+}
+
 .descendants-sep {
     opacity: 0.35;
     font-size: 10px;

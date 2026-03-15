@@ -392,183 +392,8 @@ function loadTasks(){
                 }
             }
 
-            if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
-                const statusBtn = document.createElement("button")
-                statusBtn.innerHTML = '<i class="fa-solid fa-tag"></i>'
-                statusBtn.title = task.status
-                statusBtn.addEventListener("click", () => {
-                    const existing = item.querySelector(".status-select")
-                    if (existing) { existing.remove(); return }
-                    const select = document.createElement("select")
-                    select.className = "status-select"
-                    const statuses = ["To-Do", "In Progress", "Completed", "Cancelled", "Backlog", "Blocked", "Waiting"]
-                    statuses.forEach(s => {
-                        const opt = document.createElement("option")
-                        opt.value = s
-                        opt.textContent = s
-                        if (s === task.status) opt.selected = true
-                        select.appendChild(opt)
-                    })
-                    select.addEventListener("change", () => {
-                        fetch("/update-status", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: task.id, status: select.value})
-                        })
-                        .then(response => response.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(select)
-                })
-                item.appendChild(statusBtn)
-
-                const priorityBtn = document.createElement("button")
-                priorityBtn.innerHTML = '<i class="fa-solid fa-exclamation"></i>'
-                priorityBtn.title = task.priority ? `Priority ${task.priority}` : "Set priority"
-                priorityBtn.addEventListener("click", () => {
-                    const existing = item.querySelector(".priority-select")
-                    if (existing) { existing.remove(); return }
-                    const prioritySelect = document.createElement("select")
-                    prioritySelect.className = "priority-select"
-                    const priorities = [
-                        [1, "1 — Minimal"],
-                        [2, "2 — Routine"],
-                        [3, "3 — Important"],
-                        [4, "4 — Urgent"],
-                        [5, "5 — Critical"]
-                    ]
-                    priorities.forEach(([val, label]) => {
-                        const opt = document.createElement("option")
-                        opt.value = val
-                        opt.textContent = label
-                        if (val === task.priority) opt.selected = true
-                        prioritySelect.appendChild(opt)
-                    })
-                    prioritySelect.addEventListener("change", () => {
-                        fetch("/update-priority", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: task.id, priority: parseInt(prioritySelect.value)})
-                        })
-                        .then(response => response.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(prioritySelect)
-                })
-                item.appendChild(priorityBtn)
-
-                const effortBtn = document.createElement("button")
-                effortBtn.innerHTML = '<i class="fa-solid fa-dumbbell"></i>'
-                effortBtn.title = task.effort ? `Effort ${task.effort}` : "Set effort"
-                effortBtn.addEventListener("click", () => {
-                    const existing = item.querySelector(".effort-select")
-                    if (existing) { existing.remove(); return }
-                    const effortSelect = document.createElement("select")
-                    effortSelect.className = "effort-select"
-                    const efforts = [
-                        [1, "1 — Trivial"],
-                        [2, "2 — Small"],
-                        [3, "3 — Medium"],
-                        [4, "4 — Large"],
-                        [5, "5 — Massive"]
-                    ]
-                    efforts.forEach(([val, label]) => {
-                        const opt = document.createElement("option")
-                        opt.value = val
-                        opt.textContent = label
-                        if (val === task.effort) opt.selected = true
-                        effortSelect.appendChild(opt)
-                    })
-                    effortSelect.addEventListener("change", () => {
-                        fetch("/update-effort", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: task.id, effort: parseInt(effortSelect.value)})
-                        })
-                        .then(response => response.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(effortSelect)
-                })
-                item.appendChild(effortBtn)
-
-                const calendarBtn = document.createElement("button")
-                calendarBtn.innerHTML = '<i class="fa-solid fa-calendar"></i>'
-                calendarBtn.title = task.due_date || "Set due date"
-                calendarBtn.addEventListener("click", () => {
-                    const existing = item.querySelector(".due-date-input")
-                    if (existing) { existing.remove(); item.querySelector(".due-date-fixed-btn")?.remove(); return }
-                    const dueDateInput = document.createElement("input")
-                    dueDateInput.type = "date"
-                    dueDateInput.className = "due-date-input"
-                    dueDateInput.value = task.due_date || ""
-                    dueDateInput.addEventListener("change", () => {
-                        fetch("/update-due-date", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: task.id, due_date: dueDateInput.value || null})
-                        })
-                        .then(response => response.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(dueDateInput)
-
-                    const anchorBtn = document.createElement("button")
-                    anchorBtn.className = "due-date-fixed-btn"
-                    anchorBtn.innerHTML = '<i class="fa-solid fa-anchor"></i>'
-                    anchorBtn.title = task.due_date_fixed ? "Fixed date (click to make flexible)" : "Flexible date (click to fix)"
-                    anchorBtn.classList.toggle("due-date-fixed-active", !!task.due_date_fixed)
-                    anchorBtn.addEventListener("click", () => {
-                        const newFixed = !task.due_date_fixed
-                        fetch("/update-due-date-fixed", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: task.id, fixed: newFixed})
-                        })
-                        .then(response => response.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(anchorBtn)
-                })
-                item.appendChild(calendarBtn)
-            }
 
             if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
-                const folderBtn = document.createElement("button")
-                folderBtn.innerHTML = '<i class="fa-solid fa-folder"></i>'
-                folderBtn.title = task.project_id
-                    ? allProjects.find(p => p.id === task.project_id)?.name || "Assign project"
-                    : "Assign project"
-                folderBtn.addEventListener("click", () => {
-                    const existing = item.querySelector(".project-select")
-                    if (existing) { existing.remove(); return }
-                    const projectSelect = document.createElement("select")
-                    projectSelect.className = "project-select"
-                    const none = document.createElement("option")
-                    none.value = ""
-                    none.textContent = "— no project —"
-                    if (!task.project_id) none.selected = true
-                    projectSelect.appendChild(none)
-                    allProjects.forEach(p => {
-                        const opt = document.createElement("option")
-                        opt.value = p.id
-                        opt.textContent = p.name
-                        if (p.id === task.project_id) opt.selected = true
-                        projectSelect.appendChild(opt)
-                    })
-                    projectSelect.addEventListener("change", () => {
-                        fetch("/update-task-project", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: task.id, project_id: projectSelect.value || null})
-                        })
-                        .then(r => r.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(projectSelect)
-                })
-                item.appendChild(folderBtn)
-
                 const deleteBtn = document.createElement("button")
                 deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'
                 deleteBtn.addEventListener("click", () => {
@@ -760,6 +585,26 @@ function showTaskModal(task) {
         ["fa-folder",        "Project",  allProjects.find(p => p.id === task.project_id)?.name || "—"],
     ]
 
+    const makeSelect = (options, current, url, bodyFn) => {
+        const select = document.createElement("select")
+        select.className = "modal-select"
+        options.forEach(([val, label]) => {
+            const opt = document.createElement("option")
+            opt.value = val
+            opt.textContent = label
+            if (val == (current ?? "")) opt.selected = true
+            select.appendChild(opt)
+        })
+        select.addEventListener("change", () => {
+            fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(bodyFn(select.value))
+            }).then(r => r.json()).then(() => loadTasks())
+        })
+        return select
+    }
+
     rows.forEach(([icon, label, value]) => {
         const row = document.createElement("div")
         row.className = "modal-row"
@@ -778,11 +623,57 @@ function showTaskModal(task) {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({id: task.id, name: input.value})
-                })
-                .then(r => r.json())
-                .then(() => loadTasks())
+                }).then(r => r.json()).then(() => loadTasks())
             })
             row.appendChild(input)
+        } else if (label === "Status") {
+            const opts = [["To-Do","To-Do"],["In Progress","In Progress"],["Waiting","Waiting"],["Blocked","Blocked"],["Backlog","Backlog"],["Completed","Completed"],["Cancelled","Cancelled"]]
+            row.appendChild(makeSelect(opts, task.status, "/update-status", v => ({id: task.id, status: v})))
+        } else if (label === "Priority") {
+            const opts = [[5,"5 — Critical"],[4,"4 — Urgent"],[3,"3 — Important"],[2,"2 — Routine"],[1,"1 — Minimal"],["","— none —"]]
+            row.appendChild(makeSelect(opts, task.priority ?? "", "/update-priority", v => ({id: task.id, priority: v ? parseInt(v) : null})))
+        } else if (label === "Effort") {
+            const opts = [[5,"5 — Massive"],[4,"4 — Large"],[3,"3 — Medium"],[2,"2 — Small"],[1,"1 — Trivial"],["","— none —"]]
+            row.appendChild(makeSelect(opts, task.effort ?? "", "/update-effort", v => ({id: task.id, effort: v ? parseInt(v) : null})))
+        } else if (label === "Due Date") {
+            const dateWrap = document.createElement("span")
+            dateWrap.style.display = "flex"
+            dateWrap.style.alignItems = "center"
+            dateWrap.style.gap = "8px"
+
+            const dateInput = document.createElement("input")
+            dateInput.type = "date"
+            dateInput.className = "modal-name-input"
+            dateInput.value = task.due_date || ""
+            dateInput.addEventListener("change", () => {
+                fetch("/update-due-date", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id, due_date: dateInput.value || null})
+                }).then(r => r.json()).then(() => loadTasks())
+            })
+            dateWrap.appendChild(dateInput)
+
+            const anchorBtn = document.createElement("button")
+            anchorBtn.innerHTML = '<i class="fa-solid fa-anchor"></i>'
+            anchorBtn.title = task.due_date_fixed ? "Fixed (click to make flexible)" : "Flexible (click to fix)"
+            anchorBtn.style.background = "none"
+            anchorBtn.style.border = "none"
+            anchorBtn.style.cursor = "pointer"
+            anchorBtn.style.color = task.due_date_fixed ? "#4a90d9" : "rgba(255,255,255,0.3)"
+            anchorBtn.addEventListener("click", () => {
+                const newFixed = !task.due_date_fixed
+                fetch("/update-due-date-fixed", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: task.id, fixed: newFixed})
+                }).then(r => r.json()).then(() => { task.due_date_fixed = newFixed ? 1 : 0; anchorBtn.style.color = newFixed ? "#4a90d9" : "rgba(255,255,255,0.3)"; anchorBtn.title = newFixed ? "Fixed (click to make flexible)" : "Flexible (click to fix)" })
+            })
+            dateWrap.appendChild(anchorBtn)
+            row.appendChild(dateWrap)
+        } else if (label === "Project") {
+            const opts = [["","— no project —"], ...allProjects.map(p => [p.id, p.name])]
+            row.appendChild(makeSelect(opts, task.project_id ?? "", "/update-task-project", v => ({id: task.id, project_id: v || null})))
         } else {
             const v = document.createElement("span")
             v.textContent = value

@@ -174,6 +174,19 @@ function loadTasks(){
                 countDescendants(b.id, descendantTaskMap, descendantMemo) - countDescendants(a.id, descendantTaskMap, descendantMemo)
             )
             taskGroups = [{ header: null, items: sorted }]
+        } else if (currentTaskView === 'pressure') {
+            const today = new Date(); today.setHours(0,0,0,0)
+            const pressureScore = t => {
+                const descCount = countDescendants(t.id, descendantTaskMap, descendantMemo)
+                if (!t.due_date) return 0.1 * descCount
+                const [y, mo, d] = t.due_date.split('-').map(Number)
+                const due = new Date(y, mo - 1, d)
+                const daysUntilDue = (due - today) / 86400000  // positive = future, negative = overdue
+                return 1 / Math.max(0.5, daysUntilDue) + 0.1 * descCount
+            }
+            window._pressureMap = new Map(tasks.map(t => [t.id, pressureScore(t)]))
+            const sorted = [...tasks].sort((a, b) => pressureScore(b) - pressureScore(a))
+            taskGroups = [{ header: null, items: sorted }]
         } else if (currentTaskView && currentTaskView !== 'all') {
             const buckets = new Map()
             tasks.forEach(t => {
@@ -306,6 +319,14 @@ function loadTasks(){
             nameSpan.addEventListener("click", () => showTaskModal(task))
             item.appendChild(nameSpan)
 
+            if (currentTaskView === 'pressure' && window._pressureMap) {
+                const score = window._pressureMap.get(task.id) ?? 0
+                const pb = document.createElement("span")
+                pb.className = "pressure-badge"
+                pb.textContent = score.toFixed(1)
+                item.appendChild(pb)
+            }
+
             if (!isProgressView) {
                 const ancIds = [...getAllAncestorIds(task.id, descendantTaskMap)]
                     .filter(id => id !== task.id)
@@ -408,89 +429,6 @@ function loadTasks(){
                 item.appendChild(deleteBtn)
             }
 
-            // --- Dependency section (Tasks tab only) ---
-            if (!isProgressView && (currentTab === 'tasks' || currentProject !== null)) {
-                const addParentBtn = document.createElement('button')
-                addParentBtn.innerHTML = '<i class="fa-solid fa-people-group"></i>'
-                addParentBtn.title = "Add parent"
-                addParentBtn.addEventListener('click', () => {
-                    const existing = item.querySelector('.parent-select')
-                    if (existing) { existing.remove(); return }
-                    const addParentSelect = document.createElement('select')
-                    addParentSelect.className = 'parent-select'
-                    const placeholder = document.createElement('option')
-                    placeholder.value = ''
-                    placeholder.textContent = '— select parent —'
-                    placeholder.disabled = true
-                    placeholder.selected = true
-                    addParentSelect.appendChild(placeholder)
-                    const taskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
-                    const descendantIds = getAllDescendantIds(task.id, taskMap)
-                    allTasks.forEach(other => {
-                        if (other.id === task.id) return
-                        if (task.parent_ids.includes(other.id)) return
-                        if (descendantIds.has(other.id)) return
-                        if (['Completed', 'Cancelled'].includes(other.status)) return
-                        const opt = document.createElement('option')
-                        opt.value = other.id
-                        opt.textContent = other.name
-                        addParentSelect.appendChild(opt)
-                    })
-                    addParentSelect.addEventListener('change', () => {
-                        const selectedParentId = parseInt(addParentSelect.value)
-                        fetch('/add-dependency', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({parent_id: selectedParentId, child_id: task.id})
-                        })
-                        .then(r => r.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(addParentSelect)
-                })
-                item.appendChild(addParentBtn)
-
-                const addChildBtn = document.createElement('button')
-                addChildBtn.innerHTML = '<i class="fa-solid fa-child"></i>'
-                addChildBtn.title = "Add child"
-                addChildBtn.addEventListener('click', () => {
-                    const existing = item.querySelector('.child-select')
-                    if (existing) { existing.remove(); return }
-                    const addChildSelect = document.createElement('select')
-                    addChildSelect.className = 'child-select'
-                    const placeholder = document.createElement('option')
-                    placeholder.value = ''
-                    placeholder.textContent = '— select child —'
-                    placeholder.disabled = true
-                    placeholder.selected = true
-                    addChildSelect.appendChild(placeholder)
-                    const taskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
-                    const ancestorIds = getAllAncestorIds(task.id, taskMap)
-                    allTasks.forEach(other => {
-                        if (other.id === task.id) return
-                        if (task.child_ids.includes(other.id)) return
-                        if (ancestorIds.has(other.id)) return
-                        if (['Completed', 'Cancelled'].includes(other.status)) return
-                        const opt = document.createElement('option')
-                        opt.value = other.id
-                        opt.textContent = other.name
-                        addChildSelect.appendChild(opt)
-                    })
-                    addChildSelect.addEventListener('change', () => {
-                        const selectedChildId = parseInt(addChildSelect.value)
-                        fetch('/add-dependency', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({parent_id: task.id, child_id: selectedChildId})
-                        })
-                        .then(r => r.json())
-                        .then(() => loadTasks())
-                    })
-                    item.appendChild(addChildSelect)
-                })
-                item.appendChild(addChildBtn)
-            }
-
             list.appendChild(item)
         })
     })
@@ -500,7 +438,7 @@ function switchTab(tab) {
     currentTab = tab
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
+    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-pressure', 'view-progress'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
@@ -520,6 +458,7 @@ function setTaskView(view) {
     document.getElementById('view-duedate').classList.toggle('active', currentTaskView === 'duedate')
     document.getElementById('view-status').classList.toggle('active', currentTaskView === 'status')
     document.getElementById('view-descendants').classList.toggle('active', currentTaskView === 'descendants')
+    document.getElementById('view-pressure').classList.toggle('active', currentTaskView === 'pressure')
     document.getElementById('view-progress').classList.toggle('active', currentTaskView === 'progress')
     loadTasks()
 }
@@ -527,7 +466,7 @@ function setTaskView(view) {
 function goBackToProjects() {
     currentProject = null
     currentTaskView = 'all'
-    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-progress'].forEach(id =>
+    ;['view-priority', 'view-effort', 'view-project', 'view-duedate', 'view-status', 'view-descendants', 'view-pressure', 'view-progress'].forEach(id =>
         document.getElementById(id).classList.remove('active'))
     document.getElementById('view-all').classList.add('active')
     loadTasks()
@@ -689,33 +628,96 @@ function showTaskModal(task) {
         .filter(id => { const t = taskMap[id]; return t && !['Completed', 'Cancelled'].includes(t.status) })
     const descIds = [...getAllDescendantIds(task.id, taskMap)].filter(id => id !== task.id)
 
-    const addRelSection = (icon, label, ids, directIds) => {
+    // ids = all transitive ancestors/descendants; directIds = direct parents/children (removable + highlighted)
+    const addRelSection = (icon, label, ids, directIds, parentOrChild) => {
         const row = document.createElement("div")
         row.className = "modal-row modal-row-rel"
         const l = document.createElement("span")
         l.className = "modal-label"
         l.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`
-        const list = document.createElement("span")
-        if (ids.length === 0) {
-            list.textContent = "—"
-        } else {
-            ids.forEach((id, i) => {
+        row.appendChild(l)
+
+        const wrap = document.createElement("span")
+        wrap.style.display = "flex"
+        wrap.style.alignItems = "center"
+        wrap.style.flexWrap = "wrap"
+        wrap.style.gap = "4px"
+
+        const sortedIds = [...ids].sort((a, b) => {
+            const aD = directIds.includes(a), bD = directIds.includes(b)
+            return aD === bD ? 0 : aD ? -1 : 1
+        })
+        sortedIds.forEach((id, i) => {
                 const t = taskMap[id]
                 if (!t) return
-                const s = document.createElement("span")
-                s.textContent = t.name
-                if (directIds.includes(id)) s.className = "modal-direct"
-                list.appendChild(s)
-                if (i < ids.length - 1) list.appendChild(document.createTextNode(", "))
+                const isDirect = directIds.includes(id)
+                if (isDirect) {
+                    const tag = document.createElement("span")
+                    tag.className = "modal-dep-tag modal-direct"
+                    tag.textContent = t.name + " "
+                    const removeBtn = document.createElement("button")
+                    removeBtn.textContent = "×"
+                    removeBtn.className = "modal-dep-remove"
+                    removeBtn.addEventListener("click", () => {
+                        const body = parentOrChild === 'parent'
+                            ? {parent_id: id, child_id: task.id}
+                            : {parent_id: task.id, child_id: id}
+                        fetch("/remove-dependency", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify(body)
+                        }).then(r => r.json()).then(() => loadTasks())
+                    })
+                    tag.appendChild(removeBtn)
+                    wrap.appendChild(tag)
+                } else {
+                    const s = document.createElement("span")
+                    s.textContent = t.name
+                    wrap.appendChild(s)
+                    if (i < sortedIds.length - 1) wrap.appendChild(document.createTextNode(", "))
+                }
             })
-        }
-        row.appendChild(l)
-        row.appendChild(list)
+
+            const exclusions = parentOrChild === 'parent'
+                ? getAllDescendantIds(task.id, taskMap)
+                : getAllAncestorIds(task.id, taskMap)
+            const addSelect = document.createElement("select")
+            addSelect.className = "modal-select modal-dep-select"
+            const placeholder = document.createElement("option")
+            placeholder.value = ""
+            placeholder.textContent = "+ add"
+            placeholder.disabled = true
+            placeholder.selected = true
+            addSelect.appendChild(placeholder)
+            allTasks.forEach(other => {
+                if (other.id === task.id) return
+                if (directIds.includes(other.id)) return
+                if (exclusions.has(other.id)) return
+                if (['Completed', 'Cancelled'].includes(other.status)) return
+                const opt = document.createElement("option")
+                opt.value = other.id
+                opt.textContent = other.name
+                addSelect.appendChild(opt)
+            })
+            addSelect.addEventListener("change", () => {
+                const selectedId = parseInt(addSelect.value)
+                const body = parentOrChild === 'parent'
+                    ? {parent_id: selectedId, child_id: task.id}
+                    : {parent_id: task.id, child_id: selectedId}
+                fetch("/add-dependency", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(body)
+                }).then(r => r.json()).then(() => loadTasks())
+            })
+            wrap.appendChild(addSelect)
+
+        row.appendChild(wrap)
         content.appendChild(row)
     }
 
-    addRelSection("fa-people-group", "Ancestors",   ancIds,  task.parent_ids)
-    addRelSection("fa-child",        "Descendants", descIds, task.child_ids)
+    addRelSection("fa-people-group", "Ancestors",   ancIds,  task.parent_ids, "parent")
+    addRelSection("fa-child",        "Descendants", descIds, task.child_ids,  "child")
 
     document.getElementById("task-modal-overlay").style.display = "flex"
 }

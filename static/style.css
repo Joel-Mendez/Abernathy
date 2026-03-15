@@ -229,6 +229,50 @@ body {
     border-bottom-color: #4a90d9;
 }
 
+.modal-dep-tag {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 13px;
+}
+
+.modal-dep-tag.modal-direct {
+    background: rgba(74,144,217,0.15);
+    color: #4a90d9;
+}
+
+.modal-dep-remove {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    padding: 0 0 0 4px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.modal-dep-remove:hover {
+    color: #fff;
+}
+
+.modal-dep-select {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.pressure-badge {
+    display: inline-block;
+    background: #111;
+    color: #e8943a;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
 .descendants-sep {
     opacity: 0.35;
     font-size: 10px;

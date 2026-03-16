@@ -45,21 +45,6 @@ def init_db():
         )
     ''')
 
-    # Normalize any legacy lowercase/variant status values
-    status_map = {
-        'todo': 'To-Do',
-        'in progress': 'In Progress',
-        'in-progress': 'In Progress',
-        'completed': 'Completed',
-        'cancelled': 'Cancelled',
-        'canceled': 'Cancelled',
-        'backlog': 'Backlog',
-        'blocked': 'Blocked',
-        'waiting': 'Waiting',
-    }
-    for old, new in status_map.items():
-        cursor.execute("UPDATE tasks SET status = ? WHERE LOWER(status) = ?", (new, old))
-
     # Sync blocked status for all existing tasks that have parents
     cursor.execute('SELECT DISTINCT child_id FROM task_dependencies')
     child_ids = [r['child_id'] for r in cursor.fetchall()]

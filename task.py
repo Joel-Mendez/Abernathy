@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_PATH = 'abernathy.db' # Make this user specific in the future
+DB_PATH = 'abernathy.db'
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -19,65 +19,13 @@ def init_db():
             status TEXT NOT NULL DEFAULT 'To-Do',
             date_completed TEXT,
             priority INTEGER NOT NULL DEFAULT 3,
-            due_date TEXT
+            due_date TEXT,
+            project_id INTEGER,
+            effort INTEGER,
+            due_date_fixed INTEGER NOT NULL DEFAULT 0,
+            notes, TEXT
         )
      ''')
-
-    # Migration: add the status column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'To-Do'")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
-
-    # Migration: add date_completed column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN date_completed TEXT")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
-
-    # Migration: add priority column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 3")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
-
-    # Migration: add due_date column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN due_date TEXT")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
-
-    # Migration: add project_id column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN project_id INTEGER")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
-
-    # Migration: add effort column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN effort INTEGER")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
-
-    # Migration: add due_date_fixed column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN due_date_fixed INTEGER NOT NULL DEFAULT 0")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
-
-    # Migration: add notes column if this db was created before it existed
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN notes TEXT")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
 
     # Join table for many-to-many parent/child relationships
     cursor.execute('''

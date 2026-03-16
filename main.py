@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import task
+import db 
 
 app = Flask(__name__) # Create application
 
@@ -7,7 +8,7 @@ app = Flask(__name__) # Create application
 def home():
     return render_template('index.html')
 
-# Task Routes
+# Task Routes ################################
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     return jsonify(task.get_tasks())

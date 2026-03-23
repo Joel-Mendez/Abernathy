@@ -4,6 +4,17 @@ let currentTaskView = 'all'     // 'all' | 'priority' | 'project' | 'duedate' | 
 let allTasks = []
 let allProjects = []
 let sandboxZoom = 1.0
+let currentCalendarDate = null
+
+const DAY_BLOCKS = [
+    ['wake_up',   'Wake Up (6–9am)'],
+    ['morning',   'Morning (9am–12pm)'],
+    ['lunch',     'Lunch (12–2pm)'],
+    ['afternoon', 'Afternoon (2–5pm)'],
+    ['evening',   'Evening (5–9pm)'],
+    ['nighttime', 'Nighttime (9–10pm)'],
+]
+const DAY_BLOCK_MAP = Object.fromEntries(DAY_BLOCKS)
 
 // Recursively count all descendants of a task.
 // Score = sum of (child_score + 1) for each direct child, transitively.
@@ -55,7 +66,7 @@ function countAncestors(taskId, taskMap, memo, visited = new Set()) {
 }
 
 function loadTasks(){
-    const showToggle = currentTab === 'tasks' || currentProject !== null
+    const showToggle = (currentTab === 'tasks' || currentProject !== null) && currentTab !== 'calendar'
     document.getElementById("sort-menu-wrap").style.display = showToggle ? "" : "none"
     document.getElementById("sort-option-project").style.display = currentProject !== null ? "none" : ""
     Promise.all([
@@ -134,6 +145,14 @@ function loadTasks(){
             document.getElementById("back-btn").style.display = ""
             document.getElementById("tab-title").textContent = currentProject.name
             document.getElementById("sort-option-progress").style.display = ""
+        } else if (currentTab === 'calendar' && currentCalendarDate !== null) {
+            const [y, mo, d] = currentCalendarDate.split('-').map(Number)
+            const dt = new Date(y, mo - 1, d)
+            const wd = ['Sun.', 'Mon.', 'Tue.', 'Wed.', 'Thu.', 'Fri.', 'Sat.']
+            const mn = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.']
+            document.getElementById("tab-title").textContent = `${wd[dt.getDay()]} ${mn[dt.getMonth()]} ${dt.getDate()}, ${y}`
+            document.getElementById("back-btn").style.display = ""
+            document.getElementById("sort-option-progress").style.display = "none"
         } else {
             document.getElementById("back-btn").style.display = "none"
             document.getElementById("sort-option-progress").style.display = "none"
@@ -147,15 +166,26 @@ function loadTasks(){
                 ? allTasks.filter(t => t.status === 'Completed' && t.project_id === currentProject.id)
                     .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed))
                 : allTasks.filter(t => t.status !== 'Completed' && t.project_id === currentProject.id)
-            : currentTab === 'tasks'
-                ? allTasks.filter(t => t.status !== 'Completed')
+            : currentTab === 'calendar' && currentCalendarDate !== null
+                ? allTasks.filter(t => t.due_date === currentCalendarDate)
+                    .sort((a, b) => {
+                        const order = ['Completed', 'In Progress', 'To-Do', 'Waiting', 'Blocked', 'Backlog', 'Cancelled']
+                        const ai = order.indexOf(a.status), bi = order.indexOf(b.status)
+                        if (ai !== bi) return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi)
+                        if (a.status === 'Completed' && b.status === 'Completed')
+                            return new Date(a.date_completed) - new Date(b.date_completed)
+                        return 0
+                    })
+            : currentTab === 'tasks' || currentTab === 'calendar'
+                ? allTasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled')
                 : allTasks
                     .filter(t => t.status === 'Completed')
                     .sort((a, b) => new Date(b.date_completed) - new Date(a.date_completed))
 
-        // Only show the + button on the Tasks tab; always close the form on tab switch
+        // Only show the + button on the Tasks tab and calendar day view; always close the form on tab switch
         if (currentProject === null) {
-            document.getElementById("add-btn").style.display = currentTab === 'tasks' ? "" : "none"
+            const showAdd = currentTab === 'tasks' || (currentTab === 'calendar' && currentCalendarDate !== null)
+            document.getElementById("add-btn").style.display = showAdd ? "" : "none"
             document.getElementById("add-task").style.display = "none"
         }
 
@@ -354,8 +384,19 @@ function loadTasks(){
         }
 
         // Group tasks for the active view mode
-        let taskGroups = [{ header: null, items: tasks }]
-        if (isProgressView) {
+        let taskGroups = [{ header: null, items: tasks, dateKey: null }]
+        if (currentTab === 'calendar' && currentCalendarDate !== null) {
+            const blockKeys = DAY_BLOCKS.map(([k]) => k)
+            const buckets = new Map(DAY_BLOCKS.map(([k, l]) => [k, { header: l, items: [], dateKey: k }]))
+            buckets.set('none', { header: 'Unscheduled', items: [], dateKey: 'none' })
+            tasks.forEach(t => {
+                const key = t.day_block && blockKeys.includes(t.day_block) ? t.day_block : 'none'
+                buckets.get(key).items.push(t)
+            })
+            taskGroups = [...blockKeys, 'none']
+                .map(k => buckets.get(k))
+                .filter(g => g.items.length > 0)
+        } else if (isProgressView) {
             // no grouping — progress view is always flat, date-bucketed via date headers in render loop
         } else if (currentTaskView === 'descendants') {
             const sorted = [...tasks].sort((a, b) =>
@@ -423,21 +464,28 @@ function loadTasks(){
             } else {
                 entries.sort(([a], [b]) => { if (a === 'No Due Date') return 1; if (b === 'No Due Date') return -1; return a.localeCompare(b) })
             }
-            taskGroups = entries.map(([, g]) => g)
+            taskGroups = entries.map(([key, g]) => ({ ...g, dateKey: key }))
         }
 
         // Flatten into a render sequence, inserting group header sentinels
         const renderItems = []
-        taskGroups.forEach(({ header, items }) => {
-            if (header !== null) renderItems.push({ task: null, groupHeader: header })
-            items.forEach(task => renderItems.push({ task, groupHeader: null }))
+        taskGroups.forEach(({ header, items, dateKey }) => {
+            if (header !== null) renderItems.push({ task: null, groupHeader: header, dateKey: dateKey ?? null })
+            items.forEach(task => renderItems.push({ task, groupHeader: null, dateKey: null }))
         })
 
         let currentDate = null
-        renderItems.forEach(({ task, groupHeader }) => {
+        renderItems.forEach(({ task, groupHeader, dateKey }) => {
             if (groupHeader !== null) {
                 const h = document.createElement('h3')
                 h.textContent = groupHeader
+                if (currentTab === 'calendar' && dateKey && dateKey !== 'No Due Date') {
+                    h.style.cursor = 'pointer'
+                    h.addEventListener('click', () => {
+                        currentCalendarDate = dateKey
+                        loadTasks()
+                    })
+                }
                 list.appendChild(h)
                 return
             }
@@ -632,11 +680,13 @@ document.addEventListener('click', e => {
 function switchTab(tab) {
     currentTab = tab
     currentProject = null
-    currentTaskView = 'all'
+    currentCalendarDate = null
+    currentTaskView = tab === 'calendar' ? 'duedate' : 'all'
     document.getElementById("tab-tasks").classList.toggle("active", tab === 'tasks')
+    document.getElementById("tab-calendar").classList.toggle("active", tab === 'calendar')
     document.getElementById("tab-projects").classList.toggle("active", tab === 'projects')
     document.getElementById("tab-progress").classList.toggle("active", tab === 'progress')
-    document.getElementById("tab-title").textContent = { tasks: "Tasks", projects: "Projects", progress: "Progress" }[tab]
+    document.getElementById("tab-title").textContent = { tasks: "Tasks", calendar: "Calendar", projects: "Projects", progress: "Progress" }[tab]
     updateSortUI()
     loadTasks()
 }
@@ -649,8 +699,12 @@ function setTaskView(view) {
 }
 
 function goBackToProjects() {
-    currentProject = null
-    currentTaskView = 'all'
+    if (currentCalendarDate !== null) {
+        currentCalendarDate = null
+    } else {
+        currentProject = null
+        currentTaskView = 'all'
+    }
     updateSortUI()
     loadTasks()
 }
@@ -679,6 +733,15 @@ function sendInput(){
         body: body
     })
     .then(response => response.json())
+    .then(newTask => {
+        if (currentCalendarDate && newTask.id) {
+            return fetch("/update-due-date", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({id: newTask.id, due_date: currentCalendarDate})
+            })
+        }
+    })
     .then(() => {
         document.getElementById("input").value = ""
         document.getElementById("add-task").style.display = "none"
@@ -694,7 +757,7 @@ document.addEventListener("keydown", e => {
     if (e.key === "Escape") closeTaskModal()
     const tag = document.activeElement.tagName
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
-    if (e.key === "n" && (currentTab === "tasks" || currentProject !== null)) {
+    if (e.key === "n" && (currentTab === "tasks" || currentProject !== null || (currentTab === "calendar" && currentCalendarDate !== null))) {
         e.preventDefault()
         toggleAddForm()
     }
@@ -709,12 +772,13 @@ function showTaskModal(task) {
     const effortLabels   = { 1: "1 — Trivial",  2: "2 — Small",   3: "3 — Medium",   4: "4 — Large",  5: "5 — Massive" }
 
     const rows = [
-        ["fa-pen-to-square", "Name",     task.name],
-        ["fa-tag",           "Status",   task.status || "—"],
-        ["fa-exclamation",   "Priority", task.priority ? priorityLabels[task.priority] : "—"],
-        ["fa-dumbbell",      "Effort",   task.effort   ? effortLabels[task.effort]     : "—"],
-        ["fa-calendar",      "Due Date", task.due_date ? task.due_date + (task.due_date_fixed ? "  ⚓ fixed" : "  flexible") : "—"],
-        ["fa-folder",        "Project",  allProjects.find(p => p.id === task.project_id)?.name || "—"],
+        ["fa-pen-to-square", "Name",      task.name],
+        ["fa-tag",           "Status",    task.status || "—"],
+        ["fa-exclamation",   "Priority",  task.priority ? priorityLabels[task.priority] : "—"],
+        ["fa-dumbbell",      "Effort",    task.effort   ? effortLabels[task.effort]     : "—"],
+        ["fa-calendar",      "Due Date",  task.due_date ? task.due_date + (task.due_date_fixed ? "  ⚓ fixed" : "  flexible") : "—"],
+        ["fa-folder",        "Project",   allProjects.find(p => p.id === task.project_id)?.name || "—"],
+        ["fa-clock",         "Day Block", task.day_block ? DAY_BLOCK_MAP[task.day_block] : "—"],
     ]
 
     const makeSelect = (options, current, url, bodyFn) => {
@@ -806,6 +870,9 @@ function showTaskModal(task) {
         } else if (label === "Project") {
             const opts = [["","— no project —"], ...allProjects.map(p => [p.id, p.name])]
             row.appendChild(makeSelect(opts, task.project_id ?? "", "/update-task-project", v => ({id: task.id, project_id: v || null})))
+        } else if (label === "Day Block") {
+            const opts = [["","— none —"], ...DAY_BLOCKS]
+            row.appendChild(makeSelect(opts, task.day_block ?? "", "/update-day-block", v => ({id: task.id, day_block: v || null})))
         } else {
             const v = document.createElement("span")
             v.textContent = value
@@ -825,12 +892,14 @@ function showTaskModal(task) {
     notesArea.className = "modal-notes"
     notesArea.value = task.notes || ""
     notesArea.placeholder = "Add notes..."
-    notesArea.addEventListener("change", () => {
+    notesArea.addEventListener("blur", () => {
         fetch("/update-notes", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({id: task.id, notes: notesArea.value})
-        }).then(r => r.json())
+        }).then(r => r.json()).then(() => {
+            task.notes = notesArea.value
+        })
     })
     notesRow.appendChild(notesLabel)
     notesRow.appendChild(notesArea)
@@ -949,6 +1018,7 @@ function showTaskModal(task) {
 }
 
 function closeTaskModal() {
+    if (document.activeElement) document.activeElement.blur()
     document.getElementById("task-modal-overlay").style.display = "none"
 }
 

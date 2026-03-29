@@ -180,6 +180,99 @@ body {
     box-shadow: 0 0 0 1px rgba(74, 144, 217, 0.6);
 }
 
+#overdue-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+}
+
+#overdue-modal {
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    min-width: 340px;
+    max-width: 560px;
+    width: 90%;
+    position: relative;
+    font-family: 'Inconsolata', monospace;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.overdue-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.overdue-modal-close:hover { opacity: 1; }
+
+.overdue-row {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.overdue-row:last-child { border-bottom: none; }
+
+.overdue-name {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.overdue-due {
+    font-size: 12px;
+    color: #c0392b;
+    margin-bottom: 8px;
+}
+
+.overdue-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.overdue-btn {
+    font-family: 'Inconsolata', monospace;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: none;
+    color: #fff;
+}
+
+.overdue-btn:hover { background: rgba(255,255,255,0.1); }
+
+.overdue-btn-delete {
+    color: #c0392b;
+    border-color: rgba(192,57,43,0.4);
+}
+
+.overdue-btn-delete:hover { background: rgba(192,57,43,0.15); }
+
+.overdue-date-input {
+    font-family: 'Inconsolata', monospace;
+    font-size: 12px;
+    background: #2a2a2a;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 4px;
+    padding: 3px 6px;
+}
+
 #task-modal-overlay {
     display: none;
     position: fixed;

@@ -109,10 +109,10 @@ function loadTasks(){
                             editBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
                         } else {
                             const input = item.querySelector("input[type='text']")
-                            fetch("/update-project", {
-                                method: "POST",
+                            fetch(`/projects/${project.id}`, {
+                                method: "PATCH",
                                 headers: {"Content-Type": "application/json"},
-                                body: JSON.stringify({id: project.id, name: input.value})
+                                body: JSON.stringify({name: input.value})
                             })
                             .then(r => r.json())
                             .then(() => loadTasks())
@@ -123,10 +123,8 @@ function loadTasks(){
                     const deleteBtn = document.createElement("button")
                     deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'
                     deleteBtn.addEventListener("click", () => {
-                        fetch("/delete-project", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify({id: project.id})
+                        fetch(`/projects/${project.id}`, {
+                            method: "DELETE"
                         })
                         .then(r => r.json())
                         .then(() => loadTasks())
@@ -191,6 +189,12 @@ function loadTasks(){
 
         const list = document.getElementById("task-list")
         list.innerHTML = ""  // clear the list before re-rendering
+
+        if (currentProject !== null) {
+            const tasksHeader = document.createElement("h3")
+            tasksHeader.textContent = "Tasks"
+            list.appendChild(tasksHeader)
+        }
 
         // Pre-build task map + memo for descendants mode (also used in render loop)
         const descendantTaskMap = Object.fromEntries(allTasks.map(t => [t.id, t]))
@@ -528,10 +532,10 @@ function loadTasks(){
                 checkbox.checked = task.status === "Completed"
                 checkbox.addEventListener("change", () => {
                     const newStatus = checkbox.checked ? "Completed" : "To-Do"
-                    fetch("/update-status", {
-                        method: "POST",
+                    fetch(`/tasks/${task.id}`, {
+                        method: "PATCH",
                         headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({id: task.id, status: newStatus})
+                        body: JSON.stringify({status: newStatus})
                     })
                     .then(response => response.json())
                     .then(() => loadTasks())  // refresh so task moves to correct tab
@@ -653,6 +657,33 @@ function loadTasks(){
 
             list.appendChild(item)
         })
+
+        if (currentProject !== null) {
+            const notesHeader = document.createElement("h3")
+            notesHeader.textContent = "Notes"
+            list.appendChild(notesHeader)
+
+            const notesItem = document.createElement("li")
+            notesItem.style.listStyle = "none"
+            const notesArea = document.createElement("textarea")
+            notesArea.className = "modal-notes"
+            notesArea.style.width = "100%"
+            notesArea.style.color = "#333"
+            notesArea.style.borderBottomColor = "rgba(0,0,0,0.15)"
+            notesArea.value = currentProject.notes || ""
+            notesArea.placeholder = "Add project notes..."
+            notesArea.addEventListener("blur", () => {
+                fetch(`/projects/${currentProject.id}`, {
+                    method: "PATCH",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({notes: notesArea.value})
+                }).then(r => r.json()).then(() => {
+                    currentProject.notes = notesArea.value
+                })
+            })
+            notesItem.appendChild(notesArea)
+            list.appendChild(notesItem)
+        }
     })
 }
 
@@ -723,10 +754,11 @@ function toggleAddForm() {
 function sendInput(){
     const user_input = document.getElementById("input").value
     if (!user_input.trim()) return
-    const url = (currentTab === 'projects' && currentProject === null) ? "/create-project" : "/create-task"
-    const body = (currentTab === 'projects' && currentProject === null)
+    const isProject = currentTab === 'projects' && currentProject === null
+    const url = isProject ? "/projects" : "/tasks"
+    const body = isProject
         ? JSON.stringify({name: user_input})
-        : JSON.stringify({message: user_input, project_id: currentProject ? currentProject.id : null})
+        : JSON.stringify({name: user_input, project_id: currentProject ? currentProject.id : null})
     fetch(url, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -735,10 +767,10 @@ function sendInput(){
     .then(response => response.json())
     .then(newTask => {
         if (currentCalendarDate && newTask.id) {
-            return fetch("/update-due-date", {
-                method: "POST",
+            return fetch(`/tasks/${newTask.id}`, {
+                method: "PATCH",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({id: newTask.id, due_date: currentCalendarDate})
+                body: JSON.stringify({due_date: currentCalendarDate})
             })
         }
     })
@@ -781,7 +813,7 @@ function showTaskModal(task) {
         ["fa-clock",         "Day Block", task.day_block ? DAY_BLOCK_MAP[task.day_block] : "—"],
     ]
 
-    const makeSelect = (options, current, url, bodyFn) => {
+    const makeSelect = (options, current, bodyFn) => {
         const select = document.createElement("select")
         select.className = "modal-select"
         options.forEach(([val, label]) => {
@@ -792,8 +824,8 @@ function showTaskModal(task) {
             select.appendChild(opt)
         })
         select.addEventListener("change", () => {
-            fetch(url, {
-                method: "POST",
+            fetch(`/tasks/${task.id}`, {
+                method: "PATCH",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(bodyFn(select.value))
             }).then(r => r.json()).then(() => loadTasks())
@@ -815,22 +847,22 @@ function showTaskModal(task) {
             input.className = "modal-name-input"
             input.value = value
             input.addEventListener("change", () => {
-                fetch("/update-task", {
-                    method: "POST",
+                fetch(`/tasks/${task.id}`, {
+                    method: "PATCH",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id, name: input.value})
+                    body: JSON.stringify({name: input.value})
                 }).then(r => r.json()).then(() => loadTasks())
             })
             row.appendChild(input)
         } else if (label === "Status") {
             const opts = [["To-Do","To-Do"],["In Progress","In Progress"],["Waiting","Waiting"],["Blocked","Blocked"],["Backlog","Backlog"],["Completed","Completed"],["Cancelled","Cancelled"]]
-            row.appendChild(makeSelect(opts, task.status, "/update-status", v => ({id: task.id, status: v})))
+            row.appendChild(makeSelect(opts, task.status, v => ({status: v})))
         } else if (label === "Priority") {
             const opts = [[5,"5 — Critical"],[4,"4 — Urgent"],[3,"3 — Important"],[2,"2 — Routine"],[1,"1 — Minimal"],["","— none —"]]
-            row.appendChild(makeSelect(opts, task.priority ?? "", "/update-priority", v => ({id: task.id, priority: v ? parseInt(v) : null})))
+            row.appendChild(makeSelect(opts, task.priority ?? "", v => ({priority: v ? parseInt(v) : null})))
         } else if (label === "Effort") {
             const opts = [[5,"5 — Massive"],[4,"4 — Large"],[3,"3 — Medium"],[2,"2 — Small"],[1,"1 — Trivial"],["","— none —"]]
-            row.appendChild(makeSelect(opts, task.effort ?? "", "/update-effort", v => ({id: task.id, effort: v ? parseInt(v) : null})))
+            row.appendChild(makeSelect(opts, task.effort ?? "", v => ({effort: v ? parseInt(v) : null})))
         } else if (label === "Due Date") {
             const dateWrap = document.createElement("span")
             dateWrap.style.display = "flex"
@@ -842,10 +874,10 @@ function showTaskModal(task) {
             dateInput.className = "modal-name-input"
             dateInput.value = task.due_date || ""
             dateInput.addEventListener("change", () => {
-                fetch("/update-due-date", {
-                    method: "POST",
+                fetch(`/tasks/${task.id}`, {
+                    method: "PATCH",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id, due_date: dateInput.value || null})
+                    body: JSON.stringify({due_date: dateInput.value || null})
                 }).then(r => r.json()).then(() => loadTasks())
             })
             dateWrap.appendChild(dateInput)
@@ -859,20 +891,20 @@ function showTaskModal(task) {
             anchorBtn.style.color = task.due_date_fixed ? "#4a90d9" : "rgba(255,255,255,0.3)"
             anchorBtn.addEventListener("click", () => {
                 const newFixed = !task.due_date_fixed
-                fetch("/update-due-date-fixed", {
-                    method: "POST",
+                fetch(`/tasks/${task.id}`, {
+                    method: "PATCH",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: task.id, fixed: newFixed})
+                    body: JSON.stringify({due_date_fixed: newFixed})
                 }).then(r => r.json()).then(() => { task.due_date_fixed = newFixed ? 1 : 0; anchorBtn.style.color = newFixed ? "#4a90d9" : "rgba(255,255,255,0.3)"; anchorBtn.title = newFixed ? "Fixed (click to make flexible)" : "Flexible (click to fix)" })
             })
             dateWrap.appendChild(anchorBtn)
             row.appendChild(dateWrap)
         } else if (label === "Project") {
             const opts = [["","— no project —"], ...allProjects.map(p => [p.id, p.name])]
-            row.appendChild(makeSelect(opts, task.project_id ?? "", "/update-task-project", v => ({id: task.id, project_id: v || null})))
+            row.appendChild(makeSelect(opts, task.project_id ?? "", v => ({project_id: v || null})))
         } else if (label === "Day Block") {
             const opts = [["","— none —"], ...DAY_BLOCKS]
-            row.appendChild(makeSelect(opts, task.day_block ?? "", "/update-day-block", v => ({id: task.id, day_block: v || null})))
+            row.appendChild(makeSelect(opts, task.day_block ?? "", v => ({day_block: v || null})))
         } else {
             const v = document.createElement("span")
             v.textContent = value
@@ -893,10 +925,10 @@ function showTaskModal(task) {
     notesArea.value = task.notes || ""
     notesArea.placeholder = "Add notes..."
     notesArea.addEventListener("blur", () => {
-        fetch("/update-notes", {
-            method: "POST",
+        fetch(`/tasks/${task.id}`, {
+            method: "PATCH",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id: task.id, notes: notesArea.value})
+            body: JSON.stringify({notes: notesArea.value})
         }).then(r => r.json()).then(() => {
             task.notes = notesArea.value
         })
@@ -942,13 +974,10 @@ function showTaskModal(task) {
                     removeBtn.textContent = "×"
                     removeBtn.className = "modal-dep-remove"
                     removeBtn.addEventListener("click", () => {
-                        const body = parentOrChild === 'parent'
-                            ? {parent_id: id, child_id: task.id}
-                            : {parent_id: task.id, child_id: id}
-                        fetch("/remove-dependency", {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify(body)
+                        const parentId = parentOrChild === 'parent' ? id : task.id
+                        const childId  = parentOrChild === 'parent' ? task.id : id
+                        fetch(`/tasks/${parentId}/dependencies/${childId}`, {
+                            method: "DELETE"
                         }).then(r => r.json()).then(() => loadTasks())
                     })
                     tag.appendChild(removeBtn)
@@ -984,13 +1013,12 @@ function showTaskModal(task) {
             })
             addSelect.addEventListener("change", () => {
                 const selectedId = parseInt(addSelect.value)
-                const body = parentOrChild === 'parent'
-                    ? {parent_id: selectedId, child_id: task.id}
-                    : {parent_id: task.id, child_id: selectedId}
-                fetch("/add-dependency", {
+                const parentId = parentOrChild === 'parent' ? selectedId : task.id
+                const childId  = parentOrChild === 'parent' ? task.id : selectedId
+                fetch(`/tasks/${parentId}/dependencies`, {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify(body)
+                    body: JSON.stringify({child_id: childId})
                 }).then(r => r.json()).then(() => loadTasks())
             })
             wrap.appendChild(addSelect)
@@ -1006,10 +1034,8 @@ function showTaskModal(task) {
     deleteBtn.className = "modal-delete-btn"
     deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Delete task'
     deleteBtn.addEventListener("click", () => {
-        fetch("/delete-task", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id: task.id})
+        fetch(`/tasks/${task.id}`, {
+            method: "DELETE"
         }).then(r => r.json()).then(() => { closeTaskModal(); loadTasks() })
     })
     content.appendChild(deleteBtn)

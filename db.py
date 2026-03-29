@@ -42,10 +42,16 @@ def init():
     # Create Projects Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS projects (
-            id   INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL
+            id    INTEGER PRIMARY KEY AUTOINCREMENT,
+            name  TEXT NOT NULL,
+            notes TEXT
         )
     ''')
+
+    try:
+        cursor.execute('ALTER TABLE projects ADD COLUMN notes TEXT')
+    except sqlite3.OperationalError:
+        pass
 
     conn.commit()
     conn.close()

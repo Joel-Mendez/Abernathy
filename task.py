@@ -29,7 +29,7 @@ def _sync_child_status(cursor, child_id):
         )
 
 
-def create_task(name, project_id=None):
+def create(name, project_id=None):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('INSERT INTO tasks (name, status, project_id) VALUES (?, ?, ?)', (name, 'To-Do', project_id))
@@ -38,7 +38,7 @@ def create_task(name, project_id=None):
     conn.close()
     return task_id
 
-def get_tasks():
+def get_all():
     conn = db.get_connection()
     cursor = conn.cursor()
 
@@ -60,7 +60,7 @@ def get_tasks():
     conn.close()
     return list(tasks.values())
 
-def delete_task(task_id):
+def delete(task_id):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('DELETE FROM task_dependencies WHERE parent_id = ? OR child_id = ?', (task_id, task_id))
@@ -90,14 +90,14 @@ def remove_dependency(parent_id, child_id):
     conn.commit()
     conn.close()
 
-def update_task(task_id, name):
+def update_name(task_id, name):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET name = ? WHERE id = ?', (name, task_id))
     conn.commit()
     conn.close()
 
-def update_task_status(task_id, status):
+def update_status(task_id, status):
     conn = db.get_connection()
     cursor = conn.cursor()
     if status == 'Completed':
@@ -116,49 +116,49 @@ def update_task_status(task_id, status):
     conn.commit()
     conn.close()
 
-def update_task_due_date(task_id, due_date):
+def update_due_date(task_id, due_date):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET due_date = ? WHERE id = ?', (due_date, task_id))
     conn.commit()
     conn.close()
 
-def update_task_due_date_fixed(task_id, fixed):
+def update_due_date_fixed(task_id, fixed):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET due_date_fixed = ? WHERE id = ?', (1 if fixed else 0, task_id))
     conn.commit()
     conn.close()
 
-def update_task_priority(task_id, priority):
+def update_priority(task_id, priority):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET priority = ? WHERE id = ?', (priority, task_id))
     conn.commit()
     conn.close()
 
-def update_task_effort(task_id, effort):
+def update_effort(task_id, effort):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET effort = ? WHERE id = ?', (effort, task_id))
     conn.commit()
     conn.close()
 
-def update_task_notes(task_id, notes):
+def update_notes(task_id, notes):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET notes = ? WHERE id = ?', (notes, task_id))
     conn.commit()
     conn.close()
 
-def update_task_day_block(task_id, day_block):
+def update_day_block(task_id, day_block):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET day_block = ? WHERE id = ?', (day_block, task_id))
     conn.commit()
     conn.close()
 
-def update_task_project(task_id, project_id):
+def update_project(task_id, project_id):
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE tasks SET project_id = ? WHERE id = ?', (project_id, task_id))
